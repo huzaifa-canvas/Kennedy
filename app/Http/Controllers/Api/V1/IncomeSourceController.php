@@ -1,0 +1,120 @@
+<?php
+
+namespace App\Http\Controllers\Api\V1;
+
+use App\Exceptions\PlanLimitException;
+use App\Http\Controllers\Controller;
+use App\Http\Requests\Api\StoreIncomeSourceRequest;
+use App\Http\Requests\Api\UpdateIncomeSourceRequest;
+use App\Http\Resources\IncomeSourceResource;
+use App\Models\IncomeSource;
+use App\Services\PlanGate;
+use App\Traits\ApiResponses;
+use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+
+/**
+ * Screen 09 — Add Income.
+ */
+class IncomeSourceController extends Controller
+{
+    use ApiResponses;
+
+    public function __construct(private readonly PlanGate $gate)
+    {
+    }
+
+    public function index(Request $request): JsonResponse
+    {
+        $sources = $request->user()->incomeSources()
+            ->orderByDesc('is_primary')
+            ->orderBy('name')
+            ->get();
+
+        return $this->ok(IncomeSourceResource::collection($sources));
+    }
+
+    public function store(StoreIncomeSourceRequest $request): JsonResponse
+    {
+        $user = $request->user();
+        $verdict = $this->gate->canAddIncomeSource($user);
+
+        if (! $verdict['allowed']) {
+            throw new PlanLimitException($verdict['reason'], $verdict['limit'], $verdict['used'], 'income_sources');
+        }
+
+        $data = $request->validated();
+
+        $source = DB::transaction(function () use ($user, $data) {
+            $source = $user->incomeSources()->create($data);
+
+            if (! empty($data['is_primary'])) {
+                $this->demoteOtherPrimaries($user, $source->id);
+            }
+
+            // The first source a user adds becomes their schedule of record.
+            if ($user->incomeSources()->count() === 1) {
+                $source->update(['is_primary' => true]);
+                $user->forceFill([
+                    'pay_frequency' => $source->pay_frequency,
+                    'next_payday' => $source->next_payday,
+                    'estimated_paycheck_amount' => $source->amount,
+                ])->save();
+            }
+
+            return $source;
+        });
+
+        return $this->created(new IncomeSourceResource($source->fresh()), 'Income saved successfully.');
+    }
+
+    public function show(Request $request, IncomeSource $incomeSource): JsonResponse
+    {
+        $this->authorize('view', $incomeSource);
+
+        return $this->ok(new IncomeSourceResource($incomeSource));
+    }
+
+    public function update(UpdateIncomeSourceRequest $request, IncomeSource $incomeSource): JsonResponse
+    {
+        $this->authorize('update', $incomeSource);
+
+        $data = $request->validated();
+
+        DB::transaction(function () use ($request, $incomeSource, $data) {
+            $incomeSource->update($data);
+
+            if (! empty($data['is_primary'])) {
+                $this->demoteOtherPrimaries($request->user(), $incomeSource->id);
+            }
+
+            if ($incomeSource->fresh()->is_primary) {
+                $request->user()->forceFill([
+                    'pay_frequency' => $incomeSource->pay_frequency,
+                    'next_payday' => $incomeSource->next_payday,
+                    'estimated_paycheck_amount' => $incomeSource->amount,
+                ])->save();
+            }
+        });
+
+        return $this->ok(new IncomeSourceResource($incomeSource->fresh()), 'Income updated successfully.');
+    }
+
+    public function destroy(Request $request, IncomeSource $incomeSource): JsonResponse
+    {
+        $this->authorize('delete', $incomeSource);
+
+        $incomeSource->delete();
+
+        return $this->ok(null, 'Income source removed.');
+    }
+
+    private function demoteOtherPrimaries($user, int $keepId): void
+    {
+        $user->incomeSources()
+            ->whereKeyNot($keepId)
+            ->where('is_primary', true)
+            ->update(['is_primary' => false]);
+    }
+}

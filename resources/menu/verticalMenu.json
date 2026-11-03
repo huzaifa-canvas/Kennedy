@@ -1,0 +1,55 @@
+{
+  "menu": [
+    {
+      "url": "/admin",
+      "name": "Dashboard",
+      "icon": "menu-icon icon-base ti tabler-dashboard",
+      "slug": "pages-home"
+    },
+    {
+      "menuHeader": "Management"
+    },
+    {
+      "name": "Users",
+      "icon": "menu-icon icon-base ti tabler-users",
+      "slug": "app-user",
+      "url": "/admin/user/list"
+    },
+    {
+      "name": "Bills",
+      "icon": "menu-icon icon-base ti tabler-receipt",
+      "slug": "admin-bills",
+      "url": "/admin/bills"
+    },
+    {
+      "name": "Bill Categories",
+      "icon": "menu-icon icon-base ti tabler-category",
+      "slug": "admin-categories",
+      "url": "/admin/categories"
+    },
+    {
+      "menuHeader": "Monetisation"
+    },
+    {
+      "name": "Plans",
+      "icon": "menu-icon icon-base ti tabler-crown",
+      "slug": "admin-plans",
+      "url": "/admin/plans"
+    },
+    {
+      "name": "Subscriptions",
+      "icon": "menu-icon icon-base ti tabler-credit-card",
+      "slug": "admin-subscriptions",
+      "url": "/admin/subscriptions"
+    },
+    {
+      "menuHeader": "System"
+    },
+    {
+      "name": "Settings",
+      "icon": "menu-icon icon-base ti tabler-settings",
+      "slug": "admin-settings",
+      "url": "/admin/settings"
+    }
+  ]
+}
