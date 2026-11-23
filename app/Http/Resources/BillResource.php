@@ -24,7 +24,7 @@ class BillResource extends JsonResource
             'recurrence' => $this->recurrence,
             'color' => $this->color ?? $this->category?->color,
             'icon' => $this->category?->icon,
-            'icon_url' => $this->category?->icon_url,
+            'icon_url' => $this->category?->icon_path,
             'reminder_days_before' => (int) $this->reminder_days_before,
             'notes' => $this->notes,
             'is_active' => (bool) $this->is_active,

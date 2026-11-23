@@ -14,7 +14,7 @@ class BillCategoryResource extends JsonResource
             'name' => $this->name,
             'slug' => $this->slug,
             'icon' => $this->icon,
-            'icon_url' => $this->icon_url,
+            'icon_url' => $this->icon_path,
             'color' => $this->color,
             'is_quick_pick' => (bool) $this->is_quick_pick,
         ];

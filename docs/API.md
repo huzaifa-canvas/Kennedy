@@ -64,8 +64,10 @@ A `402` body carries `error_code: "plan_limit_reached"`, `feature`, `limit` and 
 | GET | `/app/bill-categories` | 11 Add Bill categories |
 
 **Category icons:** each category has `icon` (a Tabler icon name) and `icon_url` (an image the
-admin uploaded, or `null`). If `icon_url` is set, show that image; otherwise use `icon`. The same two
-fields come back on bills, bill occurrences and transactions.
+admin uploaded, or `null`). `icon_url` is a path **without the host**, e.g.
+`storage/category-icons/abc.png`; the app adds its own base URL in front
+(`https://<domain>/` + `icon_url`). If `icon_url` is set, show that image; otherwise use `icon`.
+The same two fields come back on bills, bill occurrences and transactions.
 
 The onboarding slides (02.2–02.4) and the FAQ list on Help & Support (22) are
 static copy shipped inside the app, so there is no endpoint for them. The

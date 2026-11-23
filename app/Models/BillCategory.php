@@ -26,10 +26,19 @@ class BillCategory extends Model
         return $this->hasMany(Bill::class);
     }
 
-    /** Full URL of the uploaded icon image, or null when the Tabler icon is used. */
+    /** Full URL of the uploaded icon image (admin panel), or null when the Tabler icon is used. */
     public function getIconUrlAttribute(): ?string
     {
         return $this->icon_image ? Storage::disk('public')->url($this->icon_image) : null;
+    }
+
+    /**
+     * The icon image path without the host, e.g. "storage/category-icons/abc.png".
+     * The API sends this; the mobile app prefixes its own base URL.
+     */
+    public function getIconPathAttribute(): ?string
+    {
+        return $this->icon_image ? 'storage/' . ltrim($this->icon_image, '/') : null;
     }
 
     public function scopeActive(Builder $query): Builder

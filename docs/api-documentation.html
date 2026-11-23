@@ -1,0 +1,576 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Saverr API Reference</title>
+<style>
+  :root {
+    --bg: #f7f7f5; --panel: #ffffff; --ink: #1c1b19; --muted: #6b675f; --line: #e6e3dc;
+    --accent: #f97316; --accent-soft: #fff1e6; --code-bg: #f2f0eb;
+    --get: #0e7a4f; --get-bg: #e3f4ec; --post: #b45309; --post-bg: #fdf0dc;
+    --put: #1d4ed8; --put-bg: #e3ebfd; --del: #b91c1c; --del-bg: #fde4e4;
+    --warn-bg: #fff7e0; --warn-line: #f2d27a; --flow-bg: #fbfaf7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #151412; --panel: #1e1d1a; --ink: #ecebe7; --muted: #a29e95; --line: #34322d;
+      --accent: #fb923c; --accent-soft: #3a2616; --code-bg: #2a2824;
+      --get: #5fd3a0; --get-bg: #17342a; --post: #f5b25c; --post-bg: #3a2a14;
+      --put: #8fb1ff; --put-bg: #1b2747; --del: #ff8f8f; --del-bg: #3d1c1c;
+      --warn-bg: #352c12; --warn-line: #6d5a1f; --flow-bg: #1a1917;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #151412; --panel: #1e1d1a; --ink: #ecebe7; --muted: #a29e95; --line: #34322d;
+    --accent: #fb923c; --accent-soft: #3a2616; --code-bg: #2a2824;
+    --get: #5fd3a0; --get-bg: #17342a; --post: #f5b25c; --post-bg: #3a2a14;
+    --put: #8fb1ff; --put-bg: #1b2747; --del: #ff8f8f; --del-bg: #3d1c1c;
+    --warn-bg: #352c12; --warn-line: #6d5a1f; --flow-bg: #1a1917;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-padding-top: 16px; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  code, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .88em; }
+  code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+  a { color: var(--accent); }
+  .layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); min-height: 100vh; }
+  nav.side { position: sticky; top: 0; height: 100vh; overflow-y: auto; border-right: 1px solid var(--line);
+    background: var(--panel); padding: 20px 16px; }
+  nav.side h1 { font-size: 18px; margin: 0 0 2px; }
+  nav.side .sub { color: var(--muted); font-size: 13px; margin-bottom: 14px; }
+  nav.side input { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px;
+    background: var(--bg); color: var(--ink); font: inherit; margin-bottom: 10px; }
+  nav.side a { display: flex; justify-content: space-between; padding: 6px 8px; border-radius: 6px;
+    color: var(--ink); text-decoration: none; font-size: 14px; }
+  nav.side a:hover { background: var(--accent-soft); }
+  nav.side a span { color: var(--muted); font-size: 12px; }
+  nav.side .grp { margin-top: 10px; font-size: 11px; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); padding: 0 8px; }
+  .btn { font: inherit; font-size: 13px; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 6px; padding: 5px 10px; cursor: pointer; }
+  .btn:hover { border-color: var(--accent); }
+  .toolbar { display: flex; gap: 6px; margin-bottom: 14px; }
+  main { padding: 28px 36px 80px; max-width: 1100px; }
+  .hero { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 22px 24px; margin-bottom: 26px; }
+  .hero h2 { margin: 0 0 6px; font-size: 24px; }
+  .hero p { margin: 6px 0; color: var(--muted); }
+  .grid3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-top: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; background: var(--bg); }
+  .card b { display: block; margin-bottom: 4px; }
+  .card small { color: var(--muted); }
+  section.group { margin: 38px 0 0; }
+  section.group > h3 { font-size: 20px; margin: 0 0 4px; }
+  section.group > p.lead { margin: 0 0 12px; color: var(--muted); }
+  .flow { background: var(--flow-bg); border: 1px solid var(--line); border-left: 3px solid var(--accent);
+    border-radius: 10px; padding: 12px 16px 12px 14px; margin: 0 0 14px; }
+  .flow b.t { display: block; font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin-bottom: 6px; }
+  .flow ol { margin: 0; padding-left: 20px; }
+  .flow li { margin: 4px 0; }
+  .ep { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin: 10px 0; overflow: hidden; }
+  .ep summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 70px minmax(0, 1fr) auto;
+    gap: 12px; align-items: center; padding: 12px 16px; }
+  .ep summary::-webkit-details-marker { display: none; }
+  .ep summary .path { font-weight: 600; overflow-wrap: anywhere; }
+  .ep summary .what { grid-column: 2 / 4; color: var(--muted); font-size: 14px; margin-top: -6px; }
+  .ep[open] summary { background: var(--flow-bg); }
+  .m { font: 700 11px/1 ui-monospace, Menlo, Consolas, monospace; padding: 6px 0; border-radius: 6px; text-align: center; letter-spacing: .04em; }
+  .m.GET { color: var(--get); background: var(--get-bg); } .m.POST { color: var(--post); background: var(--post-bg); }
+  .m.PUT { color: var(--put); background: var(--put-bg); } .m.DELETE { color: var(--del); background: var(--del-bg); }
+  .tags { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+  .tag { font-size: 11px; border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; color: var(--muted); white-space: nowrap; }
+  .tag.pub { border-color: var(--get); color: var(--get); }
+  .tag.new { border-color: var(--accent); color: var(--accent); }
+  .body { border-top: 1px solid var(--line); padding: 14px 16px 16px; display: grid; gap: 12px; }
+  .row { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; }
+  .row > .k { color: var(--muted); font-size: 13px; padding-top: 2px; }
+  .row ul { margin: 0; padding-left: 18px; }
+  .row li { margin: 2px 0; }
+  .refs { display: grid; gap: 6px; }
+  .ref { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px; align-items: baseline; }
+  .src { font-size: 11px; font-weight: 700; padding: 2px 7px; border-radius: 5px; background: var(--accent-soft); color: var(--accent); white-space: nowrap; }
+  .note { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 8px; padding: 8px 12px; font-size: 14px; }
+  table { width: 100%; border-collapse: collapse; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; font-size: 14px; }
+  th { background: var(--bg); font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  tr:last-child td { border-bottom: 0; }
+  .theme { margin-top: 18px; font-size: 13px; color: var(--muted); }
+  .theme button { font-size: 12px; padding: 3px 8px; }
+  .hidden { display: none !important; }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+    nav.side { position: static; height: auto; border-right: 0; border-bottom: 1px solid var(--line); }
+    main { padding: 20px 16px 60px; }
+    .grid3 { grid-template-columns: 1fr; }
+    .row { grid-template-columns: 1fr; gap: 2px; }
+    .ep summary { grid-template-columns: 62px minmax(0, 1fr); }
+    .ep summary .tags { grid-column: 1 / 3; justify-content: flex-start; }
+    .ep summary .what { grid-column: 1 / 3; margin-top: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+  <nav class="side" aria-label="Sections">
+    <h1>Saverr API</h1>
+    <div class="sub">Mobile API v1 · reference</div>
+    <input id="q" type="search" placeholder="Search endpoints, screens…" aria-label="Search endpoints" />
+    <div class="toolbar">
+      <button type="button" class="btn" id="expand">Expand all</button>
+      <button type="button" class="btn" id="collapse">Collapse all</button>
+    </div>
+    <div id="toc"></div>
+    <div class="theme">Theme:
+      <button type="button" class="btn" data-t="light">Light</button>
+      <button type="button" class="btn" data-t="dark">Dark</button>
+      <button type="button" class="btn" data-t="">Auto</button>
+    </div>
+  </nav>
+
+  <main>
+    <div class="hero" id="overview">
+      <h2>Which API does what</h2>
+      <p>Every endpoint the Saverr mobile app calls: when to call it, what it does, what to send,
+        which screen uses it, and which part of the client's requirements it comes from. Each section starts
+        with a short "How it works" flow; open any endpoint for the details.</p>
+      <p>Base URL <code>{host}/api/v1</code>. Authenticated calls send
+        <code>Authorization: Bearer &lt;token&gt;</code> and <code>Accept: application/json</code>.</p>
+      <div class="grid3">
+        <div class="card"><b>Brief</b><small>"Saverr is a paycheck-based bill planning app…" (product brief PDF): core user flow #1–9, subscription, admin.</small></div>
+        <div class="card"><b>Screens</b><small>"Current App Screens" PDF. Numbers match the slide number (1–21).</small></div>
+        <div class="card"><b>Q&amp;A</b><small>Client's confirmed answers on subscriptions (A1–A3, B1–B6, C1–C3).</small></div>
+      </div>
+    </div>
+
+    <section class="group" id="conventions">
+      <h3>Conventions</h3>
+      <p class="lead">These apply to every endpoint.</p>
+      <table>
+        <tr><th>Topic</th><th>Detail</th></tr>
+        <tr><td>Success</td><td><code>{ "status": true, "message": "…", "data": { … } }</code>. Paginated lists add <code>meta</code>: <code>current_page, last_page, per_page, total, has_more</code>.</td></tr>
+        <tr><td>Error</td><td><code>{ "status": false, "message": "…", "errors": { "field": ["…"] } }</code></td></tr>
+        <tr><td>401</td><td>Missing, expired or invalid token: send the user to Login. Tokens last 60 days.</td></tr>
+        <tr><td>402</td><td>Free-plan limit reached: open Go Premium. Body has <code>error_code: "plan_limit_reached"</code>, <code>feature</code>, <code>limit</code>, <code>used</code>.</td></tr>
+        <tr><td>403 / 404</td><td>Not your record or account suspended / not found.</td></tr>
+        <tr><td>409</td><td>Action not allowed in the current state (e.g. paying an already-paid bill).</td></tr>
+        <tr><td>422</td><td>Validation failed: show <code>errors</code> under the fields.</td></tr>
+        <tr><td>429</td><td>Rate limited. Reads 90/min, writes 30/min per user; login 5/min.</td></tr>
+        <tr><td>Free plan limits</td><td>4 active bills, 2 active income entries, 1 active savings jar, 30 days of history, no smart splits / weekly-bi-weekly recurrence / custom reminders. Pro (Monthly $4.99 or Yearly $49.99) is unlimited.</td></tr>
+        <tr><td>Category icons</td><td>Show <code>icon_url</code> (admin-uploaded image) when set, otherwise the <code>icon</code> name. <code>icon_url</code> has <b>no host</b>, e.g. <code>storage/category-icons/abc.png</code>: the app adds its base URL in front.</td></tr>
+        <tr><td>Dates</td><td>Dates are <code>YYYY-MM-DD</code>; timestamps are ISO 8601. Months are <code>YYYY-MM</code>.</td></tr>
+      </table>
+    </section>
+
+    <div id="groups"></div>
+  </main>
+</div>
+
+<script>
+/*
+ * One entry per endpoint.
+ *   what    one line shown on the collapsed row
+ *   when    when the app calls it
+ *   does    what the server does
+ *   params  request fields
+ *   ref     [source, text] client references
+ *   note    anything the app developer must not miss
+ * Each group has `flow`: the steps that tie its endpoints together.
+ */
+const GROUPS = [
+  { id: 'public', title: 'App content (no login)',
+    lead: 'Loaded before the user signs in. No token needed.',
+    flow: [
+      'On every app launch call <code>GET /app/config</code>. If <code>maintenance_mode</code> is on, show a maintenance screen; if <code>force_update</code> is on or the app version is below <code>minimum_version</code>, ask the user to update.',
+      'If the paywall is shown before login, load prices from <code>GET /app/plans</code>.',
+      'Load <code>GET /app/bill-categories</code> once and cache it; Add Bill and onboarding use it for the category chips.',
+    ],
+    eps: [
+    { m: 'GET', p: '/app/config', pub: true, what: 'App bootstrap settings',
+      when: 'On every app launch, before anything else.',
+      does: 'Reads settings the admin controls from the admin panel.',
+      screen: 'Splash, Help & Support' },
+    { m: 'GET', p: '/app/plans', pub: true, what: 'Free, Pro Monthly and Pro Yearly with prices and features',
+      when: 'When the Go Premium screen opens and the user is not logged in. Logged-in users can use <code>GET /subscription</code> instead, which also includes the plans.',
+      does: 'Lists the active plans in display order.',
+      screen: 'Go Premium (20)',
+      ref: [['Q&A', 'A1: Monthly $4.99 and Yearly $49.99'], ['Q&A', 'A2: 14-day trial on both plans'], ['Screens', '#20 Subscription screen']] },
+    { m: 'GET', p: '/app/bill-categories', pub: true, what: 'Bill categories (Rent, Utilities, Phone…)',
+      when: 'Once at start-up (cache it), or when Add Bill opens.',
+      does: 'Lists active categories in the order the admin set.',
+      screen: 'Add Bill (12), Onboarding bills (8)',
+      ref: [['Screens', '#12 Category grid'], ['Screens', '#8 Quick bills']] },
+  ]},
+
+  { id: 'auth', title: 'Authentication',
+    lead: 'Sign up, sign in, password reset and sign out.',
+    flow: [
+      '<b>Sign up / Login:</b> call <code>/auth/register</code> or <code>/auth/login</code> → save <code>token</code> securely → call RevenueCat <code>Purchases.logIn(String(user.id))</code> → register the push token with <code>POST /devices</code>.',
+      'If <code>user.onboarding_completed</code> is false, open onboarding; otherwise open Home.',
+      '<b>Forgot password</b> is three calls: <code>forgot-password</code> (email a code) → <code>verify-otp</code> (code → reset token) → <code>reset-password</code> (new password).',
+      '<b>Logout:</b> <code>DELETE /devices</code> → <code>POST /auth/logout</code> → RevenueCat <code>logOut()</code> → clear the saved token.',
+      'On app start with a saved token, call <code>GET /auth/me</code>. A 401 means the token expired: go to Login.',
+    ],
+    eps: [
+    { m: 'POST', p: '/auth/register', pub: true, what: 'Create an account',
+      when: 'User taps Sign Up and submits the form.',
+      does: 'Creates the user (Free plan) and signs them in on this device.',
+      params: '<code>name</code>, <code>email</code>, <code>password</code>, <code>password_confirmation</code>, <code>phone?</code>, <code>timezone?</code> (e.g. "America/New_York": used for greetings and reminders), <code>device_name?</code>',
+      screen: 'Sign Up (from Login, 5)', ref: [['Screens', '#5 "The sign up button needs to work"']] },
+    { m: 'POST', p: '/auth/login', pub: true, what: 'Sign in with email and password',
+      when: 'User submits the Login form.',
+      does: 'Checks the password and issues a new token. Five wrong attempts lock that email for 15 minutes; suspended accounts get 403.',
+      params: '<code>email</code>, <code>password</code>, <code>device_name?</code>',
+      screen: 'Login (5)', ref: [['Screens', '#5 Log in screen']] },
+    { m: 'POST', p: '/auth/forgot-password', pub: true, what: 'Step 1: email a 6-digit reset code',
+      when: 'User taps "Forgot password" and enters their email.',
+      does: 'Emails a code valid for 10 minutes. Always answers the same way, so nobody can test which emails have accounts.',
+      params: '<code>email</code>' },
+    { m: 'POST', p: '/auth/verify-otp', pub: true, what: 'Step 2: check the code',
+      when: 'User types the code from the email.',
+      does: 'Validates the code. Five wrong tries cancel it.',
+      params: '<code>email</code>, <code>otp</code>' },
+    { m: 'POST', p: '/auth/reset-password', pub: true, what: 'Step 3: set the new password',
+      when: 'User submits the new password.',
+      does: 'Saves the password and signs the user out on every device. Then send them to Login.',
+      params: '<code>email</code>, <code>reset_token</code>, <code>password</code>, <code>password_confirmation</code>' },
+    { m: 'GET', p: '/auth/me', what: 'The signed-in user, plan and subscription status',
+      when: 'On app start with a saved token, and after returning from the store / Settings.',
+      does: 'Returns the current user.',
+      ref: [['Q&A', 'B4: show plan status, trial dates, next billing, price, auto-renew']] },
+    { m: 'POST', p: '/auth/logout', what: 'Sign out this device',
+      when: 'Side menu → Logout.', does: 'Revokes only the current token.',
+      screen: 'Side menu → Logout (18)', note: 'Call <code>DELETE /devices</code> first (it needs the token), then this, then RevenueCat <code>logOut()</code>.' },
+    { m: 'POST', p: '/auth/logout-all', what: 'Sign out every device',
+      when: 'Optional "sign out everywhere" action.', does: 'Revokes every token the user has.' },
+    { m: 'PUT', p: '/auth/password', what: 'Change password while signed in',
+      when: 'Settings / Profile → Change password.', does: 'Checks the current password, saves the new one.',
+      params: '<code>current_password</code>, <code>password</code>, <code>password_confirmation</code>' },
+  ]},
+
+  { id: 'onboarding', title: 'Onboarding',
+    lead: 'First-run setup: pay schedule, next payday, first bills.',
+    flow: [
+      '<code>GET /onboarding/quick-picks</code> loads the bill chips for the last step.',
+      'Screen 6 (how often paid) → <code>POST /onboarding</code> with <code>pay_frequency</code>.',
+      'Screen 7 (next payday) → <code>POST /onboarding</code> with <code>next_payday</code> and <code>estimated_amount</code>. This creates the user\'s primary income source.',
+      'Screen 8 (top bills) → <code>POST /onboarding</code> with <code>bills[]</code> and <code>complete: true</code> (or call <code>/onboarding/complete</code> separately) → open Home.',
+      'Each call can send only its own step; nothing earlier is lost. The app can also send everything in one call at the end.',
+    ],
+    eps: [
+    { m: 'GET', p: '/onboarding/quick-picks', what: 'Quick-pick bill chips',
+      when: 'When the "Add your top bills" step opens.', does: 'Lists the categories the admin marked as quick picks.',
+      screen: 'Info 3/3 (8)', ref: [['Screens', '#8 "Select quick bills or add custom ones"']] },
+    { m: 'POST', p: '/onboarding', what: 'Save pay schedule, next payday and bills',
+      when: 'On Continue / Finish Setup of each onboarding step.',
+      does: 'Saves what was sent. A pay schedule creates or updates the primary income source; bills are created and their due dates scheduled.',
+      params: '<code>pay_frequency</code> (weekly | biweekly | semimonthly | monthly | varies), <code>next_payday</code>, <code>estimated_amount?</code>, <code>bills[]</code> { name, amount, due_date, recurrence, bill_category_id? }, <code>complete?</code>',
+      screen: 'Info 1/3, 2/3, 3/3 (6, 7, 8)',
+      ref: [['Brief', 'Core flow #1: enter pay schedule / paydays'], ['Brief', 'Core flow #2: enter bills (name, amount, due date)'], ['Screens', '#6 How often do you get paid'], ['Screens', '#7 Your next payday'], ['Screens', '#8 Add your top bills']],
+      note: 'Screen #8: the client could not find where to type a custom bill name. The API accepts any <code>name</code>; the app needs a text field for it.' },
+    { m: 'POST', p: '/onboarding/complete', what: 'Mark setup finished',
+      when: 'Finish Setup, if <code>complete: true</code> was not sent with the last step.',
+      does: 'Sets <code>onboarding_completed</code> so the app opens Home next time.', screen: 'Info 3/3 (8)' },
+  ]},
+
+  { id: 'home', title: 'Home & planning',
+    lead: 'The core answer: how much to set aside from the next paycheck, and how much is safe to spend.',
+    flow: [
+      'Home opens → <code>GET /dashboard</code> fills the whole screen.',
+      '"View My Plan" → <code>GET /my-plan</code>. Calendar tab → <code>GET /calendar</code>. Side menu → Insights → <code>GET /insights</code>; "see all" history → <code>GET /transactions</code>.',
+      'After anything that changes money (bill added / paid, paycheck logged, income edited), reload <code>/dashboard</code>: the set-aside is recalculated on the server.',
+      'Paused bills and items archived by a Free downgrade are never counted in any of these figures.',
+    ],
+    eps: [
+    { m: 'GET', p: '/dashboard', what: 'Everything on the Home screen',
+      when: 'Every time Home opens or comes back into view.',
+      does: 'Calculates the set-aside for the next paycheck. Free: every unpaid bill due before the paycheck after next, in full. Pro (smart splits): each bill is divided over the paychecks before its due date.',
+      screen: 'Display / Home (9)',
+      ref: [['Brief', 'Core flow #3: set-aside from each paycheck'], ['Brief', 'Core flow #4: split large bills across paychecks (Pro)'], ['Brief', 'Core flow #6: what is still available to spend'], ['Screens', '#9 Display screen'], ['Screens', '#3 Weekly & daily allowance, "before your next paycheck"']] },
+    { m: 'GET', p: '/my-plan', what: 'Income vs bills for a month',
+      when: 'Home → "View My Plan", and when the month dropdown changes.',
+      does: 'Totals the month\'s income and bills.',
+      params: '<code>month=YYYY-MM</code> (default: this month)',
+      screen: 'My Plan (10)', ref: [['Brief', 'Core flow #5: upcoming bill plan'], ['Screens', '#10 My Plan']] },
+    { m: 'GET', p: '/calendar', what: 'Paydays, bill due dates and set-aside markers',
+      when: 'Calendar tab opens, and on the month arrows.',
+      does: 'Builds one entry per day of the month.',
+      params: '<code>month=YYYY-MM</code>',
+      screen: 'Calendar (16)', ref: [['Screens', '#16 "Show the paydays and bill days"'], ['Q&A', 'A3: archived data excluded from calendar']] },
+    { m: 'GET', p: '/insights', what: 'Totals, income vs expense, history',
+      when: 'Side menu → Insights, and when the period toggle changes.',
+      does: 'Sums transactions over the period. Free accounts are capped at 30 days.',
+      params: '<code>days</code> (1–365: use 30, 90 or 365 for the toggle)',
+      screen: 'Insights (19)', ref: [['Screens', '#19 "toggle for longer periods"']] },
+    { m: 'GET', p: '/transactions', what: 'Full transaction history (paginated)',
+      when: 'Insights → Transaction History → see all / filter.',
+      does: 'Lists paychecks and bill payments, newest first. Free accounts see 30 days.',
+      params: '<code>type</code> (income | expense | all), <code>from</code>, <code>to</code>, <code>per_page</code>',
+      screen: 'Insights → Transaction history (19)', ref: [['Brief', 'Core flow #9: payment / bill history']] },
+  ]},
+
+  { id: 'bills', title: 'Bills',
+    lead: 'A bill is the template (name, amount, due date, repeats). The server turns it into one occurrence per due date, 12 months ahead. Occurrences are what get paid.',
+    flow: [
+      'Bills tab → <code>GET /bills/summary</code> for the Total / Paid / Unpaid cards and <code>GET /bill-occurrences</code> for the list. Each row has an occurrence <code>id</code>, needed for the tick.',
+      'Tick a bill → <code>POST /bill-occurrences/{id}/pay</code>; untick → <code>/unpay</code>; skip this month → <code>/skip</code>.',
+      'Add New Bill → <code>POST /bills</code>. A 402 means the Free limit (4 bills) or a Pro-only repeat: open Go Premium.',
+      'Edit or delete the bill itself (all future dates) → <code>PUT</code> / <code>DELETE /bills/{bill}</code>. <code>GET /bills</code> lists the bill templates for a manage-bills screen.',
+    ],
+    eps: [
+    { m: 'GET', p: '/bills', what: 'List bill templates',
+      when: 'A screen that manages the bills themselves (edit / delete / pause).',
+      does: 'Lists the user\'s bills with their next due date.',
+      params: '<code>search</code>, <code>category_id</code>, <code>status</code> (active | inactive | all, default active), <code>sort_by</code> (next_due_date | due_date | amount | name | created_at), <code>sort_dir</code>, <code>per_page</code>',
+      screen: 'Bills (11)' },
+    { m: 'GET', p: '/bills/summary', what: 'Total / Paid / Unpaid for a month',
+      when: 'Bills tab opens, and after paying / unpaying.',
+      does: 'Totals the month\'s bills by what is ticked as paid.',
+      params: '<code>month=YYYY-MM</code>',
+      screen: 'Bills (11) top cards', ref: [['Screens', '#11 "paid and unpaid based on what they check off"']] },
+    { m: 'POST', p: '/bills', what: 'Add a bill',
+      when: 'Add Bill → Save.',
+      does: 'Creates the bill and schedules its due dates. Free users: max 4 active bills, and only One-Time / Monthly repeats.',
+      params: '<code>name</code>, <code>amount</code>, <code>due_date</code>, <code>recurrence</code> (one_time | weekly | biweekly | monthly), <code>bill_category_id?</code>, <code>color?</code>, <code>reminder_days_before?</code> (default 2), <code>notes?</code>',
+      screen: 'Add Bill (12)', ref: [['Brief', 'Core flow #2'], ['Screens', '#12 Add Bill, "Free tier limit reached"'], ['Q&A', 'A3: Free = 4 active bills']] },
+    { m: 'GET', p: '/bills/{bill}', what: 'One bill with its schedule',
+      when: 'Opening a bill\'s detail / edit screen.' },
+    { m: 'PUT', p: '/bills/{bill}', what: 'Edit, pause or re-activate a bill',
+      when: 'Edit Bill → Save, or a pause / resume toggle.',
+      does: 'Changing amount, date or repeat rebuilds the future due dates (paid ones are kept). Turning <code>is_active</code> back on counts against the Free limit.',
+      params: 'Any field from create, plus <code>is_active</code>' },
+    { m: 'DELETE', p: '/bills/{bill}', what: 'Delete a bill',
+      when: 'Edit Bill → Delete.', does: 'Removes the bill and its future dates. Paid history and transactions stay.' },
+    { m: 'GET', p: '/bill-occurrences', what: 'Bills by due date: the list the user ticks',
+      when: 'Bills tab list, and any "this month\'s bills" list.',
+      does: 'Lists dated bill instances. Paid ones always show (history); unpaid ones only for bills in use.',
+      params: '<code>from</code>, <code>to</code> (default: this month), <code>status</code> (upcoming | paid | overdue | skipped | unpaid | all), <code>per_page</code>',
+      screen: 'Bills (11)', ref: [['Brief', 'Core flow #9: payment / bill history']] },
+    { m: 'POST', p: '/bill-occurrences/{id}/pay', what: 'Mark as paid (the tick)',
+      when: 'User ticks a bill.',
+      does: 'Marks it paid, records an expense transaction, and sends a "payment recorded" notification. 409 if already paid.',
+      params: '<code>paid_amount?</code> (default: the bill amount), <code>paid_at?</code> (default: now)',
+      screen: 'Bills (11)', ref: [['Screens', '#11 check off as paid']] },
+    { m: 'POST', p: '/bill-occurrences/{id}/unpay', what: 'Undo a payment',
+      when: 'User unticks a paid bill.', does: 'Back to upcoming / overdue; the matching transaction is removed.' },
+    { m: 'POST', p: '/bill-occurrences/{id}/skip', what: 'Skip this one due date',
+      when: 'User says this month does not apply.', does: 'Excludes that date from totals and set-aside; the bill keeps repeating.' },
+  ]},
+
+  { id: 'income', title: 'Income & paychecks',
+    lead: 'An income source is a pay schedule (amount + how often + next payday). A paycheck is money actually received.',
+    flow: [
+      'Onboarding already created the primary income source.',
+      'Home → Add Income → <code>POST /income-sources</code> for a second job. Free: max 2 active (402 after that).',
+      'When money arrives → <code>POST /paychecks</code>. The response includes the new set-aside to show straight away ("You received $1,600. Set aside $560").',
+      'Changing the primary source\'s schedule (<code>PUT</code>) also updates the user\'s pay frequency and next payday.',
+    ],
+    eps: [
+    { m: 'GET', p: '/income-sources', what: 'List income entries', when: 'Income list / Profile pay details.' },
+    { m: 'POST', p: '/income-sources', what: 'Add an income entry',
+      when: 'Home → Add Income → Save.',
+      does: 'Creates the schedule; the first one becomes primary. Free: max 2 active.',
+      params: '<code>name</code>, <code>amount</code> (per paycheck), <code>pay_frequency</code> (weekly | biweekly | semimonthly | monthly | varies), <code>next_payday</code>, <code>is_primary?</code>',
+      screen: 'Home → Add Income (9)', ref: [['Brief', 'Core flow #1'], ['Q&A', 'A3: Free = 2 active income entries']] },
+    { m: 'GET', p: '/income-sources/{id}', what: 'One income entry', when: 'Edit Income screen opens.' },
+    { m: 'PUT', p: '/income-sources/{id}', what: 'Edit, pause or re-activate an income entry',
+      when: 'Edit Income → Save.',
+      does: 'If it is (or becomes) primary, the user\'s pay schedule follows it. Re-activating counts against the Free limit.',
+      params: 'Any create field, plus <code>is_active</code>' },
+    { m: 'DELETE', p: '/income-sources/{id}', what: 'Delete an income entry', when: 'Edit Income → Delete.', does: 'Past paychecks stay.' },
+    { m: 'GET', p: '/paychecks', what: 'Paychecks received (paginated)', when: 'Paycheck history list.' },
+    { m: 'POST', p: '/paychecks', what: 'Log a paycheck',
+      when: 'User confirms they got paid.',
+      does: 'Saves it with the set-aside at that moment, writes an income transaction, rolls the next payday forward, sends a "you received…" notification.',
+      params: '<code>amount</code>, <code>received_on?</code> (default today), <code>income_source_id?</code> (default primary)',
+      ref: [['Screens', '#21 "You received $1,600. Set aside $560"']] },
+  ]},
+
+  { id: 'savings', title: 'Savings jars',
+    lead: 'Goal jars the user fills over time.',
+    flow: [
+      'Savings tab → <code>GET /savings-jars</code>.',
+      'Create New Savings Jar → <code>POST /savings-jars</code>. Free: 1 active jar (402 after that).',
+      'Add Funds → <code>POST /savings-jars/{id}/funds</code>. Passing 25 / 50 / 75 / 100% sends a milestone notification.',
+    ],
+    eps: [
+    { m: 'GET', p: '/savings-jars', what: 'List jars', when: 'Savings tab opens.',
+      screen: 'Savings Jars (13)', ref: [['Screens', '#13–14 Savings jar display']] },
+    { m: 'POST', p: '/savings-jars', what: 'Create a jar',
+      when: 'New Savings Jar → Create.',
+      does: 'Creates the jar; "already saved" is recorded as the first deposit. Free: max 1 active.',
+      params: '<code>name</code>, <code>target_amount</code>, <code>saved_amount?</code>, <code>icon?</code>, <code>color?</code>',
+      screen: 'New Savings Jar (15)', ref: [['Screens', '#15 Savings jar add'], ['Q&A', 'A3: Free = 1 active Saving Jar']] },
+    { m: 'GET', p: '/savings-jars/{id}', what: 'One jar with its deposits', when: 'Opening a jar.' },
+    { m: 'PUT', p: '/savings-jars/{id}', what: 'Edit, archive or un-archive a jar',
+      when: 'Edit Jar → Save.', does: 'Un-archiving counts against the Free limit.',
+      params: 'Any create field, plus <code>is_archived</code>' },
+    { m: 'DELETE', p: '/savings-jars/{id}', what: 'Delete a jar', when: 'Edit Jar → Delete.' },
+    { m: 'POST', p: '/savings-jars/{id}/funds', what: 'Add Funds',
+      when: 'Add Funds button on a jar.',
+      does: 'Adds a deposit, updates progress, and sends a milestone notification at 25 / 50 / 75 / 100%. Archived jars return 409.',
+      params: '<code>amount</code>, <code>note?</code>, <code>occurred_on?</code>', screen: 'Savings Jars (13)' },
+    { m: 'POST', p: '/savings-jars/{id}/withdraw', what: 'Take money out',
+      when: 'Withdraw action on a jar.', does: 'Cannot take out more than the jar holds (422). Allowed on archived jars too.',
+      params: '<code>amount</code>, <code>note?</code>, <code>occurred_on?</code>' },
+  ]},
+
+  { id: 'subscription', title: 'Subscription (RevenueCat)',
+    lead: 'Purchases and cancellations happen in the App Store / Google Play through the RevenueCat SDK. These endpoints only read and mirror that.',
+    flow: [
+      '<b>Go Premium:</b> <code>GET /subscription</code> shows the plans and the user\'s current status.',
+      '<b>Buy / start trial:</b> the app buys the chosen product with the RevenueCat SDK, then calls <code>POST /subscription/sync</code> so Pro shows at once. RevenueCat also tells the server through the webhook.',
+      '<b>Profile / Settings:</b> show the status block from <code>GET /subscription</code> (or <code>/auth/me</code>) and a <b>Manage Subscription</b> button that opens <code>manage_subscription_url</code>. There is no cancel endpoint; the user cancels with Apple / Google.',
+      '<b>When Pro ends</b> (trial or period over, or payment finally fails), the account moves to Free. If the user has more than 4 bills / 2 income / 1 jar, <code>requires_plan_selection</code> becomes true → show <code>GET /subscription/plan-selection</code> → save with <code>POST /subscription/plan-selection</code>. Extra items are archived, not deleted.',
+      '<b>Upgrades again:</b> if <code>has_restorable_archive</code> is true, offer "Restore my data" → <code>POST /subscription/restore-archived</code>.',
+    ],
+    eps: [
+    { m: 'GET', p: '/subscription', what: 'Subscription status + paywall data',
+      when: 'Go Premium opens; Profile / Settings subscription section; after returning from the store.',
+      does: 'Reads the user\'s current plan and subscription.',
+      screen: 'Go Premium (20), Profile / Settings',
+      ref: [['Q&A', 'B4: show status, trial dates, next billing, price, frequency, auto-renew; "Pro access ends" date if canceled'], ['Brief', 'Subscription: track trial / active / canceled-expired']],
+      note: '<b>Manage Subscription</b> button opens <code>manage_subscription_url</code> (Apple or Google Play settings). There is deliberately no cancel endpoint. <span class="src">Q&amp;A</span> B4, C1, C2' },
+    { m: 'POST', p: '/subscription/sync', what: 'Refresh after a purchase or restore', tag: 'changed',
+      when: 'Right after the RevenueCat purchase or "Restore purchases" succeeds in the app.',
+      does: 'The server asks RevenueCat for the user\'s real entitlement and saves it, so Pro appears without waiting for the webhook. Nothing the app sends is trusted.',
+      params: 'No body',
+      ref: [['Q&A', 'B1: trial gives full Pro immediately']] },
+    { m: 'GET', p: '/subscription/plan-selection', what: 'What the user can keep on Free', tag: 'new',
+      when: 'When <code>requires_plan_selection</code> is true (after Pro ends with too much data). Can also be opened later to swap choices.',
+      does: 'Lists every bill / income entry / jar that competes for a Free slot, with the current choice marked.',
+      ref: [['Q&A', 'A3: "prompted to choose which 4 bills, 2 income entries, 1 Saving Jar remain active"'], ['Q&A', 'C3: return to Free, not blocked or read-only']] },
+    { m: 'POST', p: '/subscription/plan-selection', what: 'Save the Free selection', tag: 'new',
+      when: 'User confirms their choice on the selection screen.',
+      does: 'Chosen items stay active; everything else is archived (never deleted) and drops out of every calculation. Clears <code>requires_plan_selection</code>.',
+      params: '<code>bills: [ids]</code>, <code>income_sources: [ids]</code>, <code>savings_jars: [ids]</code> (send all three, empty arrays allowed)',
+      ref: [['Q&A', 'A3: archived, not deleted; excluded from set-aside, My Plan, shortfall, calendar…']] },
+    { m: 'POST', p: '/subscription/restore-archived', what: 'Bring back archived Pro data', tag: 'new',
+      when: 'User taps "Restore my data" after upgrading again (<code>has_restorable_archive</code> is true).',
+      does: 'Re-activates every bill, income entry and jar archived by a downgrade and rebuilds their calendar dates.',
+      ref: [['Q&A', 'A3: "If the user later upgrades to Pro again, Saverr should provide an option to restore"']] },
+    { m: 'POST', p: '/webhooks/revenuecat', pub: true, what: 'RevenueCat → server (the app never calls this)',
+      when: 'RevenueCat calls it on every subscription event.',
+      does: 'Trial start, renewal, cancellation (Pro kept to period end), billing issue (Pro kept through the store\'s grace period), expiration (move to Free), plan change and transfer. Secured by a shared secret in the Authorization header.',
+      ref: [['Q&A', 'A3: cancel during trial keeps Pro to day 14'], ['Q&A', 'B2, B3, B6: keep Pro during billing grace / retry'], ['Q&A', 'B5: cancel keeps Pro to end of paid period']] },
+  ]},
+
+  { id: 'account', title: 'Profile, settings & account',
+    lead: 'The user\'s own details, preferences and account removal.',
+    flow: [
+      'Profile tab → <code>GET /profile</code>; Edit Profile → <code>POST /profile</code>.',
+      'Settings → <code>GET /settings</code>; each toggle / picker → <code>PUT /settings</code> with just that field.',
+      'Export Data → <code>GET /account/export</code>; Delete Account → <code>DELETE /account</code> with the password.',
+    ],
+    eps: [
+    { m: 'GET', p: '/profile', what: 'Account info', when: 'Profile tab opens.',
+      screen: 'Profile (17)', ref: [['Screens', '#17 Profile'], ['Q&A', 'B4: subscription info in Profile / Settings']] },
+    { m: 'POST', p: '/profile', what: 'Edit profile',
+      when: 'Edit Profile → Save. Send as multipart when a photo is attached.',
+      does: 'Updates only the fields sent. A new photo replaces the old one. Changing email marks it unverified.',
+      params: '<code>name?</code>, <code>email?</code>, <code>phone?</code>, <code>pay_frequency?</code>, <code>next_payday?</code>, <code>estimated_paycheck_amount?</code>, <code>timezone?</code>, <code>avatar?</code> (jpg / png / webp, 4 MB)', screen: 'Edit Profile (17)' },
+    { m: 'GET', p: '/settings', what: 'Read settings', when: 'Settings opens.', screen: 'Settings (21)' },
+    { m: 'PUT', p: '/settings', what: 'Change settings',
+      when: 'User flips a toggle or picks a value.',
+      does: 'Saves only the fields sent. Turning notifications off stops reminders and push.',
+      params: '<code>notifications_enabled</code>, <code>currency</code> (USD, EUR, GBP, CAD, AUD, PKR, INR), <code>allowance_view</code> (weekly | daily), <code>timezone</code>',
+      screen: 'Settings (21)', ref: [['Screens', '#21 Notifications toggle, Currency'], ['Screens', '#3 Weekly / daily allowance "toggle anytime"']] },
+    { m: 'GET', p: '/account/export', what: 'Export Data',
+      when: 'Settings → Export Data.', does: 'Gathers everything the user has entered.',
+      screen: 'Settings (21)', ref: [['Screens', '#21 Export Data']] },
+    { m: 'DELETE', p: '/account', what: 'Delete account',
+      when: 'Settings → Delete Account, after the user confirms with their password.',
+      does: 'Closes the account: signs out every device, removes push tokens and notifications. The user can no longer log in.',
+      params: '<code>password</code>',
+      screen: 'Settings → Delete Account (21)',
+      ref: [['Brief', 'Subscription: "request deletion of their personal information"'], ['Screens', '#21 Delete Account']],
+      note: 'Deleting the account does not cancel an App Store / Google Play subscription. Before deleting, tell the user to cancel through Manage Subscription.' },
+  ]},
+
+  { id: 'notifications', title: 'Notifications & push',
+    lead: 'The in-app notification list, plus push tokens so the server can send pushes.',
+    flow: [
+      'After login (and whenever the FCM token refreshes) → <code>POST /devices</code>.',
+      'Bell badge → <code>GET /notifications/unread-count</code> (also in <code>/dashboard</code>).',
+      'Bell tapped → <code>GET /notifications</code>; opening one → <code>/{id}/read</code>; "mark all" → <code>/read-all</code>.',
+      'Notifications are created by the server: bill reminders, payday set-aside, payment recorded, savings milestones, streaks and weekly spending changes. They are kept for 15 days.',
+    ],
+    eps: [
+    { m: 'GET', p: '/notifications', what: 'Notification list (paginated)',
+      when: 'Bell icon tapped.', params: '<code>filter</code> (all | unread), <code>per_page</code>',
+      screen: 'Notifications (21)', ref: [['Brief', 'Core flow #8: bill reminders / notifications'], ['Screens', '#21 Notifications']] },
+    { m: 'GET', p: '/notifications/unread-count', what: 'Unread badge count', when: 'To draw the red dot on the bell.', screen: 'Bell icon (all screens)' },
+    { m: 'POST', p: '/notifications/{id}/read', what: 'Mark one as read', when: 'User opens a notification.' },
+    { m: 'POST', p: '/notifications/read-all', what: 'Mark all as read', when: '"Mark all as read" action, or when the list is opened.' },
+    { m: 'DELETE', p: '/notifications/{id}', what: 'Delete one', when: 'Swipe to delete.' },
+    { m: 'POST', p: '/devices', what: 'Register a push token',
+      when: 'After login / register, and whenever Firebase gives a new token.',
+      does: 'Saves the token so the server can send push notifications. Sending the same token again just refreshes it.',
+      params: '<code>push_token</code>, <code>platform</code> (ios | android | web), <code>device_name?</code>, <code>app_version?</code>', ref: [['Brief', 'Core flow #8']] },
+    { m: 'DELETE', p: '/devices', what: 'Remove a push token',
+      when: 'On logout, before <code>/auth/logout</code>.', does: 'Stops pushes to this phone.', params: '<code>push_token</code>' },
+  ]},
+];
+
+function renderEndpoint(g, e, i) {
+  const id = `${g.id}-${i}`;
+  const tags = [];
+  if (e.pub) tags.push('<span class="tag pub">No login</span>');
+  if (e.tag) tags.push(`<span class="tag new">${e.tag}</span>`);
+  if (e.screen) tags.push(`<span class="tag">${e.screen}</span>`);
+  const row = (k, v) => `<div class="row"><div class="k">${k}</div><div>${v}</div></div>`;
+  const rows = [];
+  if (e.when) rows.push(row('When to call', e.when));
+  rows.push(row('What it does', e.does || e.what));
+  if (e.params) rows.push(row('Params', e.params));
+  if (e.screen) rows.push(row('Screen', e.screen));
+  if (e.ref) rows.push(row('Client reference', '<div class="refs">' +
+    e.ref.map(([s, t]) => `<div class="ref"><span class="src">${s}</span><span>${t}</span></div>`).join('') + '</div>'));
+  if (e.note) rows.push(`<div class="note">${e.note}</div>`);
+  const text = [e.m, e.p, e.what, e.when, e.does, e.screen, e.params, (e.ref || []).flat().join(' ')]
+    .join(' ').toLowerCase().replace(/<[^>]+>/g, '').replace(/"/g, '');
+  return `<details class="ep" id="${id}" data-search="${text}">
+    <summary><span class="m ${e.m}">${e.m}</span><span class="path mono">${e.p}</span>
+      <span class="tags">${tags.join('')}</span><span class="what">${e.what}</span></summary>
+    <div class="body">${rows.join('')}</div>
+  </details>`;
+}
+
+document.getElementById('groups').innerHTML = GROUPS.map(g => `
+  <section class="group" id="${g.id}">
+    <h3>${g.title}</h3>${g.lead ? `<p class="lead">${g.lead}</p>` : ''}
+    ${g.flow ? `<div class="flow"><b class="t">How it works</b><ol>${g.flow.map(s => `<li>${s}</li>`).join('')}</ol></div>` : ''}
+    ${g.eps.map((e, i) => renderEndpoint(g, e, i)).join('')}
+  </section>`).join('');
+
+document.getElementById('toc').innerHTML =
+  '<a href="#overview">Overview</a><a href="#conventions">Conventions</a><div class="grp">Endpoints</div>' +
+  GROUPS.map(g => `<a href="#${g.id}">${g.title}<span>${g.eps.length}</span></a>`).join('');
+
+const allEps = () => document.querySelectorAll('.ep');
+document.getElementById('expand').addEventListener('click', () => allEps().forEach(d => { d.open = true; }));
+document.getElementById('collapse').addEventListener('click', () => allEps().forEach(d => { d.open = false; }));
+
+document.getElementById('q').addEventListener('input', ev => {
+  const q = ev.target.value.trim().toLowerCase();
+  GROUPS.forEach(g => {
+    const sec = document.getElementById(g.id);
+    let shown = 0;
+    sec.querySelectorAll('.ep').forEach(el => {
+      const hit = !q || el.dataset.search.includes(q);
+      el.classList.toggle('hidden', !hit);
+      if (q && hit) el.open = true;
+      if (hit) shown++;
+    });
+    sec.classList.toggle('hidden', shown === 0);
+  });
+});
+
+document.querySelectorAll('.theme button').forEach(b => b.addEventListener('click', () => {
+  const t = b.dataset.t;
+  if (t) document.documentElement.setAttribute('data-theme', t); else document.documentElement.removeAttribute('data-theme');
+  try { localStorage.setItem('saverr-doc-theme', t); } catch (e) {}
+}));
+try { const t = localStorage.getItem('saverr-doc-theme'); if (t) document.documentElement.setAttribute('data-theme', t); } catch (e) {}
+</script>
+</body>
+</html>
