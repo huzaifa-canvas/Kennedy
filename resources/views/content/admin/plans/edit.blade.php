@@ -50,11 +50,17 @@
               <input type="number" min="0" max="999" id="sort_order" name="sort_order" class="form-control"
                      value="{{ old('sort_order', $plan->sort_order) }}" />
             </div>
-            <div class="col-12">
-              <label class="form-label" for="store_product_id">Store Product ID</label>
+            <div class="col-md-6">
+              <label class="form-label" for="store_product_id">App Store Product ID</label>
               <input type="text" id="store_product_id" name="store_product_id" class="form-control"
                      value="{{ old('store_product_id', $plan->store_product_id) }}" maxlength="191" />
-              <small class="text-muted">Must match the RevenueCat / App Store product identifier.</small>
+              <small class="text-muted">Must match the App Store Connect product attached in RevenueCat.</small>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label" for="play_store_product_id">Google Play Product ID</label>
+              <input type="text" id="play_store_product_id" name="play_store_product_id" class="form-control"
+                     value="{{ old('play_store_product_id', $plan->play_store_product_id) }}" maxlength="191" />
+              <small class="text-muted">As RevenueCat reports it, e.g. <code>saverr_pro:monthly</code> (subscription:base plan).</small>
             </div>
           </div>
         </div>

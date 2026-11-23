@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Exceptions\PlanLimitException;
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Support\Carbon;
@@ -26,7 +27,7 @@ class PlanGate
         return $this->verdict(
             $limit,
             $used,
-            "You have reached {$limit} bills on the free plan. Upgrade to add unlimited bills."
+            "You have reached {$limit} active bills on the Free plan. Upgrade to Saverr Pro for unlimited bills."
         );
     }
 
@@ -39,7 +40,7 @@ class PlanGate
         return $this->verdict(
             $limit,
             $used,
-            'Multiple income sources are part of Brilliant Buddy Pro.'
+            "You have reached {$limit} active income entries on the Free plan. Upgrade to Saverr Pro for more."
         );
     }
 
@@ -52,8 +53,29 @@ class PlanGate
         return $this->verdict(
             $limit,
             $used,
-            'Savings jars are part of Brilliant Buddy Pro.'
+            $limit === 0
+                ? 'Savings jars are part of Saverr Pro.'
+                : "You have reached {$limit} active savings jar on the Free plan. Upgrade to Saverr Pro for more."
         );
+    }
+
+    /**
+     * Turning a paused or plan-archived item back on takes a Free slot just
+     * like creating one, so it is checked the same way.
+     *
+     * @throws PlanLimitException
+     */
+    public function ensureCanReactivate(User $user, string $type): void
+    {
+        $verdict = match ($type) {
+            'bills' => $this->canAddBill($user),
+            'income_sources' => $this->canAddIncomeSource($user),
+            'savings_jars' => $this->canAddSavingsJar($user),
+        };
+
+        if (! $verdict['allowed']) {
+            throw new PlanLimitException($verdict['reason'], $verdict['limit'], $verdict['used'], $type);
+        }
     }
 
     /** Weekly and bi-weekly recurrence need a subscription. */

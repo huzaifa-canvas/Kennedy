@@ -31,6 +31,7 @@ class BillOccurrenceResource extends JsonResource
             'paid_at' => $this->paid_at?->toIso8601String(),
             'color' => $this->bill?->color ?? $this->bill?->category?->color,
             'icon' => $this->bill?->category?->icon,
+            'icon_url' => $this->bill?->category?->icon_url,
             'category' => $this->whenLoaded('bill', fn () => new BillCategoryResource($this->bill->category)),
         ];
     }

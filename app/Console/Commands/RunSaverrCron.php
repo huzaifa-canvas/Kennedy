@@ -13,6 +13,7 @@ use App\Notifications\PaydayReminderNotification;
 use App\Notifications\SpendingInsightNotification;
 use App\Services\BillScheduler;
 use App\Services\SetAsideCalculator;
+use App\Services\SubscriptionManager;
 use Illuminate\Console\Command;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -26,7 +27,8 @@ use Illuminate\Support\Facades\DB;
  *   3. tells users it is payday and how much to set aside
  *   4. congratulates an on-time streak
  *   5. compares this week's spending with last week's
- *   6. expires subscriptions past their end date
+ *   6. ends subscriptions past their end date (after re-checking RevenueCat)
+ *      and moves those users to Free
  *   7. deletes notifications older than the retention window (15 days)
  *
  * Every task is idempotent, so running it twice in a day sends nothing twice.
@@ -39,6 +41,9 @@ class RunSaverrCron extends Command
     /** Window used for the on-time streak. */
     private const STREAK_DAYS = 14;
 
+    /** Without RevenueCat's API, wait this long for a late renewal before ending Pro. */
+    private const STORE_EXPIRY_BUFFER_HOURS = 24;
+
     /** Smallest week-on-week change worth a notification. */
     private const INSIGHT_THRESHOLD_PERCENT = 10;
 
@@ -50,6 +55,7 @@ class RunSaverrCron extends Command
     public function __construct(
         private readonly BillScheduler $scheduler,
         private readonly SetAsideCalculator $calculator,
+        private readonly SubscriptionManager $subscriptions,
     ) {
         parent::__construct();
     }
@@ -266,15 +272,44 @@ class RunSaverrCron extends Command
 
     // ───────────────────────── 6. Subscriptions ──────────────────────────
 
+    /**
+     * Safety net behind the RevenueCat webhook. For each subscription whose
+     * access (grace period included) has run out:
+     *   - store subscriptions are re-read from RevenueCat, which renews,
+     *     keeps (billing retry) or expires them as the store decides;
+     *   - if RevenueCat cannot be reached, a late renewal webhook gets a
+     *     day before Pro is ended;
+     *   - manual (admin) grants simply end.
+     * Ending Pro runs the Free downgrade (archive over-limit data).
+     */
     private function expireSubscriptions(): void
     {
-        $expired = Subscription::query()
-            ->whereIn('status', ['active', 'trialing', 'cancelled'])
-            ->whereNotNull('ends_at')
-            ->where('ends_at', '<', now())
-            ->update(['status' => 'expired', 'updated_at' => now()]);
+        $expired = 0;
+        $refreshed = 0;
 
-        $this->info("   {$expired} subscription(s) expired.");
+        Subscription::query()
+            ->with('user')
+            ->accessEndedBefore(now())
+            ->chunkById(100, function ($subscriptions) use (&$expired, &$refreshed) {
+                foreach ($subscriptions as $subscription) {
+                    if ($subscription->provider === 'revenuecat') {
+                        if ($subscription->user && $this->subscriptions->refreshFromRevenueCat($subscription->user)) {
+                            $refreshed++;
+
+                            continue;
+                        }
+
+                        if ($subscription->accessEndsAt()?->gt(now()->subHours(self::STORE_EXPIRY_BUFFER_HOURS))) {
+                            continue;
+                        }
+                    }
+
+                    $this->subscriptions->expire($subscription);
+                    $expired++;
+                }
+            });
+
+        $this->info("   {$refreshed} re-checked with RevenueCat, {$expired} subscription(s) expired.");
     }
 
     // ───────────────────────── 7. Retention ──────────────────────────────

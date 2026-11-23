@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Services\SubscriptionManager;
 use App\Models\Plan;
 use App\Models\User;
 use Illuminate\Http\RedirectResponse;
@@ -96,7 +97,9 @@ class UserController extends Controller
 
         $notifications = $user->notifications()->limit(10)->get();
 
-        return view('content.admin.users.show', compact('user', 'recentTransactions', 'notifications'));
+        $subscription = app(SubscriptionManager::class)->summary($user);
+
+        return view('content.admin.users.show', compact('user', 'recentTransactions', 'notifications', 'subscription'));
     }
 
     public function create(): View

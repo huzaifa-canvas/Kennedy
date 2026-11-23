@@ -87,6 +87,7 @@ class BillController extends Controller
             : Carbon::today()->startOfMonth();
 
         $rows = $request->user()->billOccurrences()
+            ->forActiveBills()
             ->whereBetween('due_date', [
                 $month->toDateString(),
                 $month->copy()->endOfMonth()->toDateString(),
@@ -166,6 +167,11 @@ class BillController extends Controller
                 'Weekly and bi-weekly recurrence requires a subscription.',
                 feature: 'recurrence'
             );
+        }
+
+        if (filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN) && ! $bill->is_active) {
+            $this->gate->ensureCanReactivate($request->user(), 'bills');
+            $data += ['archived_at' => null, 'archived_reason' => null];
         }
 
         // Only a change to the schedule or amount needs occurrences rebuilt.

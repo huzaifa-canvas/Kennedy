@@ -46,7 +46,11 @@ class BillOccurrenceController extends Controller
 
         $query = $request->user()->billOccurrences()
             ->with('bill.category')
-            ->whereBetween('due_date', [$from->toDateString(), $to->toDateString()]);
+            ->whereBetween('due_date', [$from->toDateString(), $to->toDateString()])
+            // Payment history stays visible for every bill; anything still
+            // to pay only shows for bills in use (not paused or archived).
+            ->where(fn ($q) => $q->where('status', 'paid')
+                ->orWhereHas('bill', fn ($bill) => $bill->where('is_active', true)));
 
         $status = $validated['status'] ?? 'all';
 

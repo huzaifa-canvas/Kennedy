@@ -38,6 +38,18 @@ return [
     'revenuecat' => [
         // Shared secret set as the Authorization header in the RevenueCat dashboard.
         'webhook_secret' => env('REVENUECAT_WEBHOOK_SECRET'),
+
+        // Secret (sk_...) REST API key. Used to read a subscriber's real
+        // entitlement from RevenueCat instead of trusting the app or a
+        // possibly out-of-order webhook payload. Never ship this in the app.
+        'secret_api_key' => env('REVENUECAT_SECRET_API_KEY'),
+        'api_base' => env('REVENUECAT_API_BASE', 'https://api.revenuecat.com/v1'),
+
+        // Entitlement identifier configured in the RevenueCat dashboard.
+        'entitlement' => env('REVENUECAT_ENTITLEMENT', 'pro'),
+
+        // Used to build the Google Play "Manage Subscription" link.
+        'android_package' => env('ANDROID_PACKAGE_NAME'),
     ],
 
 ];

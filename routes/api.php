@@ -155,8 +155,12 @@ Route::prefix('v1')->group(function () {
         Route::delete('devices', [DeviceController::class, 'destroy']);
 
         // ── Subscription / paywall ───────────────────────
+        // No cancel endpoint on purpose: cancelling happens in the App Store /
+        // Google Play via `manage_subscription_url`.
         Route::get('subscription', [SubscriptionController::class, 'index']);
         Route::post('subscription/sync', [SubscriptionController::class, 'sync'])->middleware('throttle:writes');
-        Route::post('subscription/cancel', [SubscriptionController::class, 'cancel'])->middleware('throttle:writes');
+        Route::get('subscription/plan-selection', [SubscriptionController::class, 'selection']);
+        Route::post('subscription/plan-selection', [SubscriptionController::class, 'saveSelection'])->middleware('throttle:writes');
+        Route::post('subscription/restore-archived', [SubscriptionController::class, 'restore'])->middleware('throttle:writes');
     });
 });

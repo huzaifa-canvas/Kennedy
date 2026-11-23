@@ -63,6 +63,10 @@ A `402` body carries `error_code: "plan_limit_reached"`, `feature`, `limit` and 
 | GET | `/app/plans` | Paywall |
 | GET | `/app/bill-categories` | 11 Add Bill categories |
 
+**Category icons:** each category has `icon` (a Tabler icon name) and `icon_url` (an image the
+admin uploaded, or `null`). If `icon_url` is set, show that image; otherwise use `icon`. The same two
+fields come back on bills, bill occurrences and transactions.
+
 The onboarding slides (02.2–02.4) and the FAQ list on Help & Support (22) are
 static copy shipped inside the app, so there is no endpoint for them. The
 support address shown under "Get In Touch" comes from `/app/config`
@@ -279,18 +283,94 @@ by the daily cron:
 
 Register on login and whenever the FCM token is refreshed; unregister on logout.
 
-## Subscription — Paywall
+## Subscription — RevenueCat
+
+Billing runs entirely through the App Store / Google Play via **RevenueCat**.
+Saverr never charges or cancels anything itself.
+
+- **Plans:** `free`, `pro_monthly` ($4.99/month) and `pro_yearly` ($49.99/year). Monthly
+  and Yearly are two billing options for the same Pro tier.
+- **14-day free trial** on both Pro products, set up as an introductory offer in
+  App Store Connect / Google Play. The user picks Monthly or Yearly first; if they don't
+  cancel, the store bills that product when the trial ends.
+- **The app** must call `Purchases.logIn("<saverr user id>")` so RevenueCat's
+  `app_user_id` is the Saverr user id. The webhook and the API look users up by that id.
 
 | Method | Endpoint |
 |---|---|
-| GET | `/subscription` — current plan, all plans, usage counts |
-| POST | `/subscription/sync` — `plan_slug`, `provider_subscription_id`, `expires_at?`, `is_trial?` |
-| POST | `/subscription/cancel` |
-| POST | `/webhooks/revenuecat` — server-to-server (not called by the app) |
+| GET | `/subscription`: `status` block (below), current plan, all plans, usage and archived counts |
+| POST | `/subscription/sync`: no body. Call after a purchase or restore. The server reads the entitlement from RevenueCat's API. |
+| GET | `/subscription/plan-selection`: Free limits, and every bill / income / jar with `selected` |
+| POST | `/subscription/plan-selection`: `{bills: [ids], income_sources: [ids], savings_jars: [ids]}` (Free users only) |
+| POST | `/subscription/restore-archived`: Pro users only. Restores everything a downgrade archived. |
+| POST | `/webhooks/revenuecat`: server-to-server, not called by the app |
 
-`sync` updates the UI immediately after a purchase or restore; the RevenueCat
-webhook remains the source of truth and is verified against
-`REVENUECAT_WEBHOOK_SECRET` in constant time.
+There is **no cancel endpoint.** Profile / Settings shows a **Manage Subscription** button
+that opens `status.manage_subscription_url` (Apple or Google Play subscription settings),
+and the user manages or cancels there.
+
+### `status` block
+
+Returned by `/subscription` and inside `user.subscription` on `/auth/me` and `/profile`.
+
+```json
+{
+  "status": "free | free_trial | active | canceled | expired",
+  "status_label": "Free Trial",
+  "is_pro": true,
+  "plan_slug": "pro_yearly",
+  "price": 49.99,
+  "billing_period": "monthly | yearly",
+  "store": "app_store | play_store | manual",
+  "trial_started_at": "…", "trial_ends_at": "…",
+  "next_billing_date": "…",
+  "auto_renew": true,
+  "access_ends_at": "… (set when canceled: the last day of Pro)",
+  "billing_issue": false, "grace_period_ends_at": null,
+  "manage_subscription_url": "https://apps.apple.com/account/subscriptions",
+  "can_upgrade": false,
+  "requires_plan_selection": false,
+  "has_restorable_archive": false
+}
+```
+
+### Lifecycle
+
+| Event | Result |
+|---|---|
+| Trial starts | Full Pro right away, `status = free_trial` |
+| Cancel during trial or paid term | Pro is kept until the trial or period ends (`status = canceled`, `access_ends_at`) |
+| Payment fails | Pro is kept through the store's billing grace / retry period (`billing_issue = true`). If the payment recovers, nothing changes. |
+| Access ends (expiry, or grace runs out) | The account moves to **Free** (see below) |
+| Upgrades again | Pro is back; `has_restorable_archive` offers a restore |
+
+### Moving to Free
+
+Free limits are **4 bills, 2 income entries and 1 savings jar**. When Pro ends:
+
+1. The first items up to each limit stay active (primary income first, then oldest). Anything
+   beyond that is **archived, never deleted** (`archived_by_plan = true` on the item).
+2. If anything was archived, `requires_plan_selection = true`. The app should then prompt the
+   user and post their choice to `/subscription/plan-selection`.
+3. Archived items are left out of every planning figure: set-aside, My Plan, the monthly overview,
+   the calendar, upcoming bills, bill totals, reminders and payday maths. Paid history stays visible
+   in `/bill-occurrences`.
+4. On Free, turning an archived or paused item back on (`is_active` / `is_archived`) counts against
+   the limits and returns `402` when it would go over.
+5. After upgrading, `/subscription/restore-archived` brings back every archived bill, income and jar,
+   and rebuilds each bill's schedule.
+
+### Server configuration
+
+| Env | Purpose |
+|---|---|
+| `REVENUECAT_WEBHOOK_SECRET` | Must match the Authorization header set on the webhook in the RevenueCat dashboard |
+| `REVENUECAT_SECRET_API_KEY` | Secret `sk_…` key. Used to read the real entitlement (sync, webhook, cron). Never put it in the app. |
+| `REVENUECAT_ENTITLEMENT` | Entitlement id, default `pro` |
+| `ANDROID_PACKAGE_NAME` | Used to build the Google Play manage-subscription link |
+
+Store product ids are set per plan in **Admin → Plans** (App Store id, and Google Play id as
+`subscription:baseplan`).
 
 ---
 
@@ -298,11 +378,11 @@ webhook remains the source of truth and is verified against
 
 Enforced in one place (`App\Services\PlanGate`) and editable in the admin panel.
 
-| | Free | Pro |
+| | Free | Pro (Monthly / Yearly) |
 |---|---|---|
-| Bills | 3 | unlimited |
-| Income sources | 1 | unlimited |
-| Savings jars | 0 | unlimited |
+| Active bills | 4 | unlimited |
+| Active income entries | 2 | unlimited |
+| Active savings jars | 1 | unlimited |
 | History | 30 days | unlimited |
 | Smart splits | no | yes |
 | Weekly / bi-weekly recurrence | no | yes |
@@ -336,7 +416,7 @@ There is exactly one scheduled command, `saverr:cron`, and it runs daily at
 | 3 | `payday` | sends `paycheck_received` on the morning of a payday |
 | 4 | `streaks` | sends `streak` after two weeks of on-time payments |
 | 5 | `insights` | sends `spending_insight` on a week-on-week shift of 10%+ |
-| 6 | `subscriptions` | expires subscriptions past their end date |
+| 6 | `subscriptions` | re-checks lapsed subscriptions with RevenueCat, ends them, and moves the user to Free (also runs hourly) |
 | 7 | `prune` | deletes notifications older than 15 days |
 
 Every task is idempotent — running the command twice in a day sends nothing

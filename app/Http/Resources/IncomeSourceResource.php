@@ -25,6 +25,8 @@ class IncomeSourceResource extends JsonResource
             'monthly_equivalent' => $this->monthlyEquivalent(),
             'is_primary' => (bool) $this->is_primary,
             'is_active' => (bool) $this->is_active,
+            'archived_by_plan' => $this->isArchivedByPlan(),
+            'archived_at' => $this->archived_at?->toIso8601String(),
         ];
     }
 }

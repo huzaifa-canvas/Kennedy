@@ -24,3 +24,11 @@ Schedule::command('saverr:cron')
     ->dailyAt('08:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Subscriptions also run hourly so a lapsed trial / paid term (or a billing
+// grace period that ran out) moves the user to Free promptly. RevenueCat's
+// webhook normally gets there first; this is the safety net.
+Schedule::command('saverr:cron --only=subscriptions')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();

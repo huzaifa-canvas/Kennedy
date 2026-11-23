@@ -20,6 +20,7 @@ class TransactionResource extends JsonResource
             'display_amount' => ($this->type === 'income' ? '+$' : '$') . number_format($amount, 2),
             'occurred_on' => $this->occurred_on->toDateString(),
             'icon' => $this->icon ?? $this->category?->icon,
+            'icon_url' => $this->category?->icon_url,
             'color' => $this->category?->color,
             'category' => new BillCategoryResource($this->whenLoaded('category')),
         ];

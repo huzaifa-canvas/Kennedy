@@ -42,6 +42,16 @@ class BillOccurrence extends Model
         return $query->whereIn('status', ['upcoming', 'overdue']);
     }
 
+    /**
+     * Only occurrences of bills that are in use. Every planning figure
+     * (set-aside, My Plan, calendar, overview, upcoming) must go through
+     * this, so paused, deleted or plan-archived bills never leak into totals.
+     */
+    public function scopeForActiveBills(Builder $query): Builder
+    {
+        return $query->whereHas('bill', fn (Builder $bill) => $bill->where('is_active', true));
+    }
+
     public function scopePaid(Builder $query): Builder
     {
         return $query->where('status', 'paid');

@@ -34,6 +34,7 @@ class User extends Authenticatable
         'allowance_view',
         'notifications_enabled',
         'onboarding_completed_at',
+        'plan_selection_required_at',
     ];
 
     protected $hidden = [
@@ -62,6 +63,7 @@ class User extends Authenticatable
             'estimated_paycheck_amount' => 'decimal:2',
             'notifications_enabled' => 'boolean',
             'onboarding_completed_at' => 'datetime',
+            'plan_selection_required_at' => 'datetime',
             'last_login_at' => 'datetime',
         ];
     }
@@ -113,6 +115,12 @@ class User extends Authenticatable
         return $this->hasOne(Subscription::class)->active()->latestOfMany();
     }
 
+    /** Most recent subscription of any status, for "Expired" / history display. */
+    public function latestSubscription(): HasOne
+    {
+        return $this->hasOne(Subscription::class)->latestOfMany();
+    }
+
     // ───────────────────────────── Scopes ─────────────────────────────
 
     public function scopeAdmins(Builder $query): Builder
@@ -150,6 +158,20 @@ class User extends Authenticatable
     public function isPro(): bool
     {
         return ! $this->plan()->isFree();
+    }
+
+    /** Downgraded with more data than Free allows, and has not picked what stays yet. */
+    public function requiresPlanSelection(): bool
+    {
+        return ! is_null($this->plan_selection_required_at);
+    }
+
+    /** Anything archived by a Free downgrade that a Pro user could bring back. */
+    public function hasPlanArchive(): bool
+    {
+        return $this->bills()->archivedByPlan()->exists()
+            || $this->incomeSources()->archivedByPlan()->exists()
+            || $this->savingsJars()->archivedByPlan()->exists();
     }
 
     public function getAvatarUrlAttribute(): string

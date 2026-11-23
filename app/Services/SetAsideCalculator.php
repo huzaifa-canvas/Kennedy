@@ -201,6 +201,7 @@ class SetAsideCalculator
 
         $occurrences = BillOccurrence::query()
             ->where('user_id', $user->id)
+            ->forActiveBills()
             ->whereBetween('due_date', [$start->toDateString(), $end->toDateString()])
             ->where('status', '!=', 'skipped')
             ->get(['amount', 'status', 'paid_amount']);
@@ -241,6 +242,7 @@ class SetAsideCalculator
         return BillOccurrence::query()
             ->with('bill:id,name,bill_category_id,color')
             ->where('user_id', $user->id)
+            ->forActiveBills()
             ->unpaid()
             ->whereBetween('due_date', [$from->toDateString(), $to->toDateString()])
             ->orderBy('due_date')

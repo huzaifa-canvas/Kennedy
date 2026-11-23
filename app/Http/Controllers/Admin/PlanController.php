@@ -32,6 +32,7 @@ class PlanController extends Controller
             'price' => ['required', 'numeric', 'min:0', 'max:9999.99'],
             'billing_period' => ['required', 'in:monthly,yearly,lifetime'],
             'store_product_id' => ['nullable', 'string', 'max:191', 'regex:/^[A-Za-z0-9_\.\-]*$/'],
+            'play_store_product_id' => ['nullable', 'string', 'max:191', 'regex:/^[A-Za-z0-9_\.\-\:]*$/'],
             'bill_limit' => ['nullable', 'integer', 'min:0', 'max:10000'],
             'income_source_limit' => ['nullable', 'integer', 'min:0', 'max:10000'],
             'savings_jar_limit' => ['nullable', 'integer', 'min:0', 'max:10000'],

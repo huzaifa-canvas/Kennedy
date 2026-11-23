@@ -17,9 +17,14 @@ class PlanResource extends JsonResource
             'price' => (float) $this->price,
             'currency' => $this->currency,
             'billing_period' => $this->billing_period,
-            'price_label' => '$' . number_format((float) $this->price, 2) . '/' . $this->billing_period,
+            'price_label' => $this->isFree()
+                ? 'Free'
+                : '$' . number_format((float) $this->price, 2) . '/' . $this->billingPeriodLabel(),
             'store_product_id' => $this->store_product_id,
+            'play_store_product_id' => $this->play_store_product_id,
+            'tier' => $this->isFree() ? 'free' : 'pro',
             'is_free' => $this->isFree(),
+            'trial_days' => $this->isFree() ? null : 14,
             'limits' => [
                 'bills' => $this->bill_limit,
                 'income_sources' => $this->income_source_limit,

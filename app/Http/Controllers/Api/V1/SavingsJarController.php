@@ -108,7 +108,14 @@ class SavingsJarController extends Controller
     {
         $this->authorize('update', $savingsJar);
 
-        $savingsJar->update($request->validated());
+        $data = $request->validated();
+
+        if (array_key_exists('is_archived', $data) && ! filter_var($data['is_archived'], FILTER_VALIDATE_BOOLEAN) && $savingsJar->is_archived) {
+            $this->gate->ensureCanReactivate($request->user(), 'savings_jars');
+            $data += ['archived_at' => null, 'archived_reason' => null];
+        }
+
+        $savingsJar->update($data);
         $this->refreshCompletion($savingsJar);
 
         return $this->ok(new SavingsJarResource($savingsJar->fresh()), 'Savings jar updated.');
@@ -127,6 +134,11 @@ class SavingsJarController extends Controller
     public function addFunds(AddFundsRequest $request, SavingsJar $savingsJar): JsonResponse
     {
         $this->authorize('update', $savingsJar);
+
+        // Archived jars are out of every calculation; withdrawals stay allowed.
+        if ($savingsJar->is_archived) {
+            return $this->fail('This savings jar is archived. Make it active again to add funds.', 409);
+        }
 
         $before = $savingsJar->progress_percent;
         $amount = (float) $request->validated('amount');

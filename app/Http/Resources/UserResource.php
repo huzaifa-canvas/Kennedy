@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Services\SubscriptionManager;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -34,8 +35,10 @@ class UserResource extends JsonResource
                 'is_pro' => ! $plan->isFree(),
                 'bill_limit' => $plan->bill_limit,
                 'savings_jar_limit' => $plan->savings_jar_limit,
+                'income_source_limit' => $plan->income_source_limit,
                 'allows_smart_splits' => (bool) $plan->allows_smart_splits,
             ],
+            'subscription' => app(SubscriptionManager::class)->summary($this->resource),
         ];
     }
 }

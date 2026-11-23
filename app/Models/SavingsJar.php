@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ArchivableByPlan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -10,11 +11,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class SavingsJar extends Model
 {
-    use SoftDeletes;
+    use ArchivableByPlan, SoftDeletes;
 
     protected $fillable = [
         'user_id', 'name', 'target_amount', 'saved_amount', 'icon', 'color',
         'completed_at', 'is_archived',
+        'archived_at', 'archived_reason',
     ];
 
     protected $appends = ['progress_percent'];
@@ -61,5 +63,15 @@ class SavingsJar extends Model
         }
 
         return (int) min(100, floor(((float) $this->saved_amount / $target) * 100));
+    }
+
+    protected function activeAttributes(): array
+    {
+        return ['is_archived' => false];
+    }
+
+    protected function inactiveAttributes(): array
+    {
+        return ['is_archived' => true];
     }
 }

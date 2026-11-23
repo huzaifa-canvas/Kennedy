@@ -5,11 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\Storage;
 
 class BillCategory extends Model
 {
     protected $fillable = [
-        'name', 'slug', 'icon', 'color', 'is_quick_pick', 'is_active', 'sort_order',
+        'name', 'slug', 'icon', 'icon_image', 'color', 'is_quick_pick', 'is_active', 'sort_order',
     ];
 
     protected function casts(): array
@@ -23,6 +24,12 @@ class BillCategory extends Model
     public function bills(): HasMany
     {
         return $this->hasMany(Bill::class);
+    }
+
+    /** Full URL of the uploaded icon image, or null when the Tabler icon is used. */
+    public function getIconUrlAttribute(): ?string
+    {
+        return $this->icon_image ? Storage::disk('public')->url($this->icon_image) : null;
     }
 
     public function scopeActive(Builder $query): Builder

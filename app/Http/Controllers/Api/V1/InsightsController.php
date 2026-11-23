@@ -120,6 +120,7 @@ class InsightsController extends Controller
 
         $occurrences = $user->billOccurrences()
             ->with('bill.category')
+            ->forActiveBills()
             ->whereBetween('due_date', [
                 $month->copy()->startOfMonth()->toDateString(),
                 $month->copy()->endOfMonth()->toDateString(),

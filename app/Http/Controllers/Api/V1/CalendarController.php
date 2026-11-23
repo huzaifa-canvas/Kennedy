@@ -44,6 +44,7 @@ class CalendarController extends Controller
         // Bills due this month.
         $occurrences = $user->billOccurrences()
             ->with('bill.category')
+            ->forActiveBills()
             ->whereBetween('due_date', [$start->toDateString(), $end->toDateString()])
             ->where('status', '!=', 'skipped')
             ->orderBy('due_date')

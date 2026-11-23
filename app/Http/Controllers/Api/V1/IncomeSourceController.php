@@ -82,6 +82,11 @@ class IncomeSourceController extends Controller
 
         $data = $request->validated();
 
+        if (filter_var($data['is_active'] ?? false, FILTER_VALIDATE_BOOLEAN) && ! $incomeSource->is_active) {
+            $this->gate->ensureCanReactivate($request->user(), 'income_sources');
+            $data += ['archived_at' => null, 'archived_reason' => null];
+        }
+
         DB::transaction(function () use ($request, $incomeSource, $data) {
             $incomeSource->update($data);
 

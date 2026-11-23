@@ -13,7 +13,7 @@ use Illuminate\Http\Request;
 class PlanLimitException extends Exception
 {
     public function __construct(
-        string $message = 'This feature is part of Brilliant Buddy Pro.',
+        string $message = 'This feature is part of Saverr Pro.',
         public readonly ?int $limit = null,
         public readonly ?int $used = null,
         public readonly string $feature = 'pro',

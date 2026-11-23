@@ -55,6 +55,7 @@ Route::prefix('admin')->middleware(['auth', 'admin'])->group(function () {
     Route::get('subscriptions', [SubscriptionController::class, 'index'])->name('admin-subscriptions');
     Route::post('subscriptions/grant', [SubscriptionController::class, 'grant'])->name('admin-subscription-grant');
     Route::patch('subscriptions/{subscription}/revoke', [SubscriptionController::class, 'revoke'])->name('admin-subscription-revoke');
+    Route::post('subscriptions/users/{user}/resync', [SubscriptionController::class, 'resync'])->name('admin-subscription-resync');
 
     // ── Settings ─────────────────────────────────────
     Route::get('settings', [SettingController::class, 'index'])->name('admin-settings');

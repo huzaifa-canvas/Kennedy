@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\ArchivableByPlan;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -11,12 +12,13 @@ use Illuminate\Support\Carbon;
 
 class IncomeSource extends Model
 {
-    use SoftDeletes;
+    use ArchivableByPlan, SoftDeletes;
 
     public const FREQUENCIES = ['weekly', 'biweekly', 'semimonthly', 'monthly', 'varies'];
 
     protected $fillable = [
         'user_id', 'name', 'amount', 'pay_frequency', 'next_payday', 'is_primary', 'is_active',
+        'archived_at', 'archived_reason',
     ];
 
     /** Column defaults, so a freshly created model matches what the DB stores. */
@@ -78,5 +80,15 @@ class IncomeSource extends Model
     public function monthlyEquivalent(): float
     {
         return round((float) $this->amount * $this->paydaysPerMonth(), 2);
+    }
+
+    protected function activeAttributes(): array
+    {
+        return ['is_active' => true];
+    }
+
+    protected function inactiveAttributes(): array
+    {
+        return ['is_active' => false, 'is_primary' => false];
     }
 }

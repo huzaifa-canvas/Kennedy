@@ -20,6 +20,8 @@ class SavingsJarResource extends JsonResource
             'color' => $this->color,
             'is_completed' => ! is_null($this->completed_at),
             'is_archived' => (bool) $this->is_archived,
+            'archived_by_plan' => $this->isArchivedByPlan(),
+            'archived_at' => $this->archived_at?->toIso8601String(),
             'created_at' => $this->created_at?->toIso8601String(),
         ];
     }

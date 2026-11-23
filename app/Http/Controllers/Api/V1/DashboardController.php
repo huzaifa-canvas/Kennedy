@@ -31,6 +31,7 @@ class DashboardController extends Controller
 
         $upcoming = $user->billOccurrences()
             ->with('bill.category')
+            ->forActiveBills()
             ->unpaid()
             ->whereDate('due_date', '>=', Carbon::today())
             ->orderBy('due_date')

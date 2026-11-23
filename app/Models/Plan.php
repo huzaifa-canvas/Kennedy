@@ -9,7 +9,7 @@ class Plan extends Model
 {
     protected $fillable = [
         'name', 'slug', 'tagline', 'price', 'currency', 'billing_period',
-        'store_product_id', 'bill_limit', 'income_source_limit', 'savings_jar_limit',
+        'store_product_id', 'play_store_product_id', 'bill_limit', 'income_source_limit', 'savings_jar_limit',
         'history_days', 'allows_smart_splits', 'allows_custom_reminders',
         'allows_advanced_recurrence', 'allows_calendar_themes', 'features',
         'is_default', 'is_active', 'sort_order',
@@ -46,5 +46,37 @@ class Plan extends Model
     public static function default(): self
     {
         return static::where('is_default', true)->firstOrFail();
+    }
+
+    /**
+     * The paid plan a store product belongs to. Google products arrive as
+     * "subscriptionId:basePlanId", so a plan configured with only the
+     * subscription id still matches.
+     */
+    public static function forStoreProduct(?string $productId): ?self
+    {
+        if (! $productId) {
+            return null;
+        }
+
+        $subscriptionId = explode(':', $productId)[0];
+
+        return static::query()
+            ->where(function ($query) use ($productId, $subscriptionId) {
+                $query->where('store_product_id', $productId)
+                    ->orWhere('play_store_product_id', $productId)
+                    ->orWhere('play_store_product_id', $subscriptionId);
+            })
+            ->orderByDesc('is_active')
+            ->first();
+    }
+
+    public function billingPeriodLabel(): string
+    {
+        return match ($this->billing_period) {
+            'yearly' => 'year',
+            'lifetime' => 'lifetime',
+            default => 'month',
+        };
     }
 }
