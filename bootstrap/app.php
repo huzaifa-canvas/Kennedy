@@ -5,6 +5,7 @@ use App\Http\Middleware\EnsureUserIsAdmin;
 use App\Http\Middleware\ForceJsonResponse;
 use App\Http\Middleware\LocaleMiddleware;
 use App\Http\Middleware\SecurityHeaders;
+use App\Support\ValidationMessage;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -59,11 +60,16 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
+            // API only: messages folded into `message`. Admin (web) requests keep
+            // Laravel's default validation response with the per-field errors.
             if ($e instanceof ValidationException) {
+                if (! $request->is('api/*')) {
+                    return null;
+                }
+
                 return response()->json([
                     'status' => false,
-                    'message' => 'The given data was invalid.',
-                    'errors' => $e->errors(),
+                    'message' => ValidationMessage::from($e->errors()),
                 ], 422);
             }
 

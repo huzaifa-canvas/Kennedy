@@ -11,7 +11,7 @@ Every response uses the same envelope:
 Errors:
 
 ```json
-{ "status": false, "message": "The given data was invalid.", "errors": { "email": ["..."] } }
+{ "status": false, "message": "The email has already been taken, The password field must be at least 8 characters." }
 ```
 
 Paginated lists add a `meta` block: `current_page`, `last_page`, `per_page`, `total`, `has_more`.
@@ -48,7 +48,7 @@ for 15 minutes. Exceeding any limiter returns `429`.
 | 402 | Plan limit reached — show the Go Premium screen (`upgrade_required: true`) |
 | 403 | Not your record, or the account is suspended |
 | 404 | Not found |
-| 422 | Validation failed (`errors` object) |
+| 422 | Validation failed: every message is in `message`, comma separated (no `errors` object) |
 | 429 | Rate limited |
 
 A `402` body carries `error_code: "plan_limit_reached"`, `feature`, `limit` and `used`.

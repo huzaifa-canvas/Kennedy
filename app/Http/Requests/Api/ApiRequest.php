@@ -2,13 +2,15 @@
 
 namespace App\Http\Requests\Api;
 
+use App\Support\ValidationMessage;
 use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Exceptions\HttpResponseException;
 
 /**
  * Every API request validates through here so failures always come back
- * in the same envelope the success responses use.
+ * in the same envelope the success responses use, with every message in
+ * `message` (comma separated) and no per-field `errors` object.
  */
 abstract class ApiRequest extends FormRequest
 {
@@ -21,8 +23,7 @@ abstract class ApiRequest extends FormRequest
     {
         throw new HttpResponseException(response()->json([
             'status' => false,
-            'message' => 'The given data was invalid.',
-            'errors' => $validator->errors()->toArray(),
+            'message' => ValidationMessage::from($validator->errors()->toArray()),
         ], 422));
     }
 }

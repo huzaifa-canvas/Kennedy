@@ -26,18 +26,12 @@ trait ApiResponses
         return $this->ok($data, $message, 201);
     }
 
-    protected function fail(string $message, int $status = 400, array $errors = []): JsonResponse
+    protected function fail(string $message, int $status = 400): JsonResponse
     {
-        $payload = [
+        return response()->json([
             'status' => false,
             'message' => $message,
-        ];
-
-        if ($errors !== []) {
-            $payload['errors'] = $errors;
-        }
-
-        return response()->json($payload, $status);
+        ], $status);
     }
 
     /** Paginated collections keep their meta out of the data envelope. */

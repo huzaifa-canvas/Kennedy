@@ -148,12 +148,12 @@
       <table>
         <tr><th>Topic</th><th>Detail</th></tr>
         <tr><td>Success</td><td><code>{ "status": true, "message": "…", "data": { … } }</code>. Paginated lists add <code>meta</code>: <code>current_page, last_page, per_page, total, has_more</code>.</td></tr>
-        <tr><td>Error</td><td><code>{ "status": false, "message": "…", "errors": { "field": ["…"] } }</code></td></tr>
+        <tr><td>Error</td><td><code>{ "status": false, "message": "…" }</code></td></tr>
         <tr><td>401</td><td>Missing, expired or invalid token: send the user to Login. Tokens last 60 days.</td></tr>
         <tr><td>402</td><td>Free-plan limit reached: open Go Premium. Body has <code>error_code: "plan_limit_reached"</code>, <code>feature</code>, <code>limit</code>, <code>used</code>.</td></tr>
         <tr><td>403 / 404</td><td>Not your record or account suspended / not found.</td></tr>
         <tr><td>409</td><td>Action not allowed in the current state (e.g. paying an already-paid bill).</td></tr>
-        <tr><td>422</td><td>Validation failed: show <code>errors</code> under the fields.</td></tr>
+        <tr><td>422</td><td>Validation failed: every message is in <code>message</code>, comma separated (e.g. "The email has already been taken, The password field must be at least 8 characters."). There is no <code>errors</code> object.</td></tr>
         <tr><td>429</td><td>Rate limited. Reads 90/min, writes 30/min per user; login 5/min.</td></tr>
         <tr><td>Free plan limits</td><td>4 active bills, 2 active income entries, 1 active savings jar, 30 days of history, no smart splits / weekly-bi-weekly recurrence / custom reminders. Pro (Monthly $4.99 or Yearly $49.99) is unlimited.</td></tr>
         <tr><td>Category icons</td><td>Show <code>icon_url</code> (admin-uploaded image) when set, otherwise the <code>icon</code> name. <code>icon_url</code> has <b>no host</b>, e.g. <code>storage/category-icons/abc.png</code>: the app adds its base URL in front.</td></tr>
