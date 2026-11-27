@@ -214,6 +214,10 @@ Paying a bill writes a matching expense transaction and sends a notification.
 | GET / PUT / DELETE | `/income-sources/{incomeSource}` |
 | GET / POST | `/paychecks` |
 
+`pay_frequency` is one of `one_time`, `weekly`, `biweekly`, `monthly`. `next_payday` is
+optional (it may be omitted or `null`). A `one_time` payment is counted once, in the
+month of its `next_payday`, and is never rolled forward.
+
 `POST /paychecks` records the money, writes an income transaction, rolls the
 next payday forward and returns the freshly recalculated set-aside.
 

@@ -53,15 +53,8 @@ class IncomeSourceController extends Controller
                 $this->demoteOtherPrimaries($user, $source->id);
             }
 
-            // The first source a user adds becomes their schedule of record.
-            if ($user->incomeSources()->count() === 1) {
-                $source->update(['is_primary' => true]);
-                $user->forceFill([
-                    'pay_frequency' => $source->pay_frequency,
-                    'next_payday' => $source->next_payday,
-                    'estimated_paycheck_amount' => $source->amount,
-                ])->save();
-            }
+            // The first source becomes primary; a new primary is mirrored onto the user.
+            $user->ensurePrimaryIncome();
 
             return $source;
         });
@@ -87,20 +80,19 @@ class IncomeSourceController extends Controller
             $data += ['archived_at' => null, 'archived_reason' => null];
         }
 
-        DB::transaction(function () use ($request, $incomeSource, $data) {
+        $makePrimary = filter_var($data['is_primary'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        $unsetPrimary = array_key_exists('is_primary', $data) && ! $makePrimary && $incomeSource->is_primary;
+
+        DB::transaction(function () use ($request, $incomeSource, $data, $makePrimary, $unsetPrimary) {
             $incomeSource->update($data);
 
-            if (! empty($data['is_primary'])) {
+            if ($makePrimary) {
                 $this->demoteOtherPrimaries($request->user(), $incomeSource->id);
             }
 
-            if ($incomeSource->fresh()->is_primary) {
-                $request->user()->forceFill([
-                    'pay_frequency' => $incomeSource->pay_frequency,
-                    'next_payday' => $incomeSource->next_payday,
-                    'estimated_paycheck_amount' => $incomeSource->amount,
-                ])->save();
-            }
+            // Un-setting, pausing or editing the primary: hand the role to the next
+            // active source if needed and keep the user's pay schedule in sync.
+            $request->user()->ensurePrimaryIncome($unsetPrimary ? $incomeSource->id : null);
         });
 
         return $this->ok(new IncomeSourceResource($incomeSource->fresh()), 'Income updated successfully.');
@@ -110,7 +102,12 @@ class IncomeSourceController extends Controller
     {
         $this->authorize('delete', $incomeSource);
 
-        $incomeSource->delete();
+        DB::transaction(function () use ($request, $incomeSource) {
+            $incomeSource->delete();
+
+            // Deleting the primary promotes the next active source.
+            $request->user()->ensurePrimaryIncome();
+        });
 
         return $this->ok(null, 'Income source removed.');
     }

@@ -113,7 +113,7 @@
               <span class="badge {{ $plan->isFree() ? 'bg-label-secondary' : 'bg-label-warning' }}">{{ $plan->name }}</span>
             </td>
             <td class="text-muted">
-              {{ $user->pay_frequency ? ucfirst(str_replace('biweekly', 'bi-weekly', $user->pay_frequency)) : '—' }}
+              {{ \App\Models\IncomeSource::frequencyLabel($user->pay_frequency) ?? '—' }}
             </td>
             <td>
               <span class="badge {{ $user->isActive() ? 'bg-label-success' : 'bg-label-danger' }}">

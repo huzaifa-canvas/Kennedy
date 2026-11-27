@@ -2,6 +2,7 @@
 
 namespace App\Http\Resources;
 
+use App\Models\IncomeSource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -14,13 +15,7 @@ class IncomeSourceResource extends JsonResource
             'name' => $this->name,
             'amount' => (float) $this->amount,
             'pay_frequency' => $this->pay_frequency,
-            'pay_frequency_label' => match ($this->pay_frequency) {
-                'weekly' => 'Weekly',
-                'biweekly' => 'Every 2 Weeks',
-                'semimonthly' => 'Twice A Month',
-                'monthly' => 'Monthly',
-                default => 'It Varies',
-            },
+            'pay_frequency_label' => IncomeSource::frequencyLabel($this->pay_frequency),
             'next_payday' => $this->next_payday?->toDateString(),
             'monthly_equivalent' => $this->monthlyEquivalent(),
             'is_primary' => (bool) $this->is_primary,

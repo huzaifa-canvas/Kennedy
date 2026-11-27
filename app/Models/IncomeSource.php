@@ -14,7 +14,14 @@ class IncomeSource extends Model
 {
     use ArchivableByPlan, SoftDeletes;
 
-    public const FREQUENCIES = ['weekly', 'biweekly', 'semimonthly', 'monthly', 'varies'];
+    public const FREQUENCIES = ['one_time', 'weekly', 'biweekly', 'monthly'];
+
+    public const FREQUENCY_LABELS = [
+        'one_time' => 'One Time',
+        'weekly' => 'Weekly',
+        'biweekly' => 'Every 2 Weeks',
+        'monthly' => 'Monthly',
+    ];
 
     protected $fillable = [
         'user_id', 'name', 'amount', 'pay_frequency', 'next_payday', 'is_primary', 'is_active',
@@ -54,29 +61,55 @@ class IncomeSource extends Model
         return $query->where('is_active', true);
     }
 
-    /** Number of paydays this source produces in a calendar month. */
+    public static function frequencyLabel(?string $frequency): ?string
+    {
+        return $frequency ? (self::FREQUENCY_LABELS[$frequency] ?? ucfirst($frequency)) : null;
+    }
+
+    /** A one-time payment is paid once and never rolls forward. */
+    public function isRecurring(): bool
+    {
+        return self::frequencyRepeats($this->pay_frequency);
+    }
+
+    public static function frequencyRepeats(?string $frequency): bool
+    {
+        return $frequency !== 'one_time';
+    }
+
+    /** Number of paydays this source produces in a calendar month (0 for one-time income). */
     public function paydaysPerMonth(): float
     {
-        return match ($this->pay_frequency) {
+        return self::paydaysPerMonthFor($this->pay_frequency);
+    }
+
+    public static function paydaysPerMonthFor(?string $frequency): float
+    {
+        return match ($frequency) {
+            'one_time' => 0,
             'weekly' => 52 / 12,
             'biweekly' => 26 / 12,
-            'semimonthly' => 2,
             default => 1,
         };
     }
 
     public function advancePayday(Carbon $from): Carbon
     {
-        return match ($this->pay_frequency) {
+        return self::advanceFor($from, $this->pay_frequency);
+    }
+
+    /** The payday after $from; a one-time payment has no next payday, so it stays put. */
+    public static function advanceFor(Carbon $from, ?string $frequency): Carbon
+    {
+        return match ($frequency) {
+            'one_time' => $from->copy(),
             'weekly' => $from->copy()->addWeek(),
             'biweekly' => $from->copy()->addWeeks(2),
-            'semimonthly' => $from->day <= 15
-                ? $from->copy()->day(min(28, $from->daysInMonth))
-                : $from->copy()->addMonthNoOverflow()->day(15),
             default => $from->copy()->addMonthNoOverflow(),
         };
     }
 
+    /** Recurring income per month; one-time income is counted only in its own month (see SetAsideCalculator). */
     public function monthlyEquivalent(): float
     {
         return round((float) $this->amount * $this->paydaysPerMonth(), 2);

@@ -29,7 +29,7 @@
           <dt class="col-6 fw-normal text-muted">Phone</dt>
           <dd class="col-6">{{ $user->phone ?: '—' }}</dd>
           <dt class="col-6 fw-normal text-muted">Pay frequency</dt>
-          <dd class="col-6">{{ $user->pay_frequency ? ucfirst($user->pay_frequency) : '—' }}</dd>
+          <dd class="col-6">{{ \App\Models\IncomeSource::frequencyLabel($user->pay_frequency) ?? '—' }}</dd>
           <dt class="col-6 fw-normal text-muted">Next payday</dt>
           <dd class="col-6">{{ $user->next_payday?->format('d M Y') ?: '—' }}</dd>
           <dt class="col-6 fw-normal text-muted">Currency</dt>
@@ -125,7 +125,7 @@
               <tr>
                 <td class="fw-medium">{{ $source->name }} @if($source->is_primary)<span class="badge bg-label-primary ms-1">Primary</span>@endif @include('content.admin.users._archived-badge', ['item' => $source, 'active' => $source->is_active])</td>
                 <td>${{ number_format((float) $source->amount, 2) }}</td>
-                <td class="text-muted">{{ ucfirst($source->pay_frequency) }}</td>
+                <td class="text-muted">{{ \App\Models\IncomeSource::frequencyLabel($source->pay_frequency) }}</td>
                 <td class="text-muted">{{ $source->next_payday?->format('d M Y') ?: '—' }}</td>
               </tr>
             @empty

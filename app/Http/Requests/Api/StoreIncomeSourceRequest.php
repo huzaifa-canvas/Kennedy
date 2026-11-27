@@ -13,7 +13,7 @@ class StoreIncomeSourceRequest extends ApiRequest
             'name' => ['required', 'string', 'min:2', 'max:100'],
             'amount' => ['required', 'numeric', 'min:0', 'max:9999999.99'],
             'pay_frequency' => ['required', Rule::in(IncomeSource::FREQUENCIES)],
-            'next_payday' => ['required', 'date', 'after_or_equal:2000-01-01', 'before:+5 years'],
+            'next_payday' => ['nullable', 'date', 'after_or_equal:2000-01-01', 'before:+5 years'],
             'is_primary' => ['nullable', 'boolean'],
         ];
     }

@@ -107,7 +107,7 @@ class OnboardingController extends Controller
      */
     private function syncPrimaryIncome($user): void
     {
-        if (! $user->pay_frequency || ! $user->next_payday) {
+        if (! $user->pay_frequency) {
             return;
         }
 

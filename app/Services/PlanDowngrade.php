@@ -105,7 +105,7 @@ class PlanDowngrade
                     });
             }
 
-            $this->ensurePrimaryIncome($user);
+            $user->ensurePrimaryIncome();
 
             if ($archivedAny) {
                 $user->forceFill(['plan_selection_required_at' => now()])->save();
@@ -160,7 +160,7 @@ class PlanDowngrade
                 }
             }
 
-            $this->ensurePrimaryIncome($user);
+            $user->ensurePrimaryIncome();
             $user->forceFill(['plan_selection_required_at' => null])->save();
         });
     }
@@ -180,7 +180,7 @@ class PlanDowngrade
                 'savings_jars' => $this->reactivateAll($user->savingsJars()->archivedByPlan()->get()),
             ];
 
-            $this->ensurePrimaryIncome($user);
+            $user->ensurePrimaryIncome();
             $user->forceFill(['plan_selection_required_at' => null])->save();
 
             return $restored;
@@ -219,34 +219,5 @@ class PlanDowngrade
         if ($item instanceof Bill) {
             $this->scheduler->resync($item);
         }
-    }
-
-    /**
-     * Payday maths reads the primary income. If it was archived, promote the
-     * next active source and mirror it onto the user like IncomeSourceController does.
-     */
-    private function ensurePrimaryIncome(User $user): void
-    {
-        $active = $user->incomeSources()->active()->orderByDesc('is_primary')->orderBy('id')->get();
-        $primary = $active->firstWhere('is_primary', true) ?? $active->first();
-
-        if (! $primary) {
-            return;
-        }
-
-        if (! $primary->is_primary) {
-            $primary->forceFill(['is_primary' => true])->save();
-        }
-
-        $user->incomeSources()
-            ->whereKeyNot($primary->id)
-            ->where('is_primary', true)
-            ->update(['is_primary' => false]);
-
-        $user->forceFill([
-            'pay_frequency' => $primary->pay_frequency,
-            'next_payday' => $primary->next_payday,
-            'estimated_paycheck_amount' => $primary->amount,
-        ])->save();
     }
 }

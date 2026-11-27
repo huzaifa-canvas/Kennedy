@@ -72,7 +72,7 @@ class PaycheckController extends Controller
             // Move the schedule on so the next payday is in the future.
             $source = $paycheck->incomeSource;
 
-            if ($source && $source->next_payday && $source->pay_frequency !== 'varies') {
+            if ($source && $source->next_payday && $source->isRecurring()) {
                 $next = $source->advancePayday($source->next_payday);
 
                 while ($next->lte($receivedOn)) {

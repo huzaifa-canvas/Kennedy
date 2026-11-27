@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\BillOccurrence;
+use App\Models\IncomeSource;
 use App\Models\User;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
@@ -46,14 +47,14 @@ class SetAsideCalculator
 
             // Roll a stale payday forward so projections always start in the future.
             $guard = 0;
-            while ($cursor->lt($today) && $source->pay_frequency !== 'varies' && $guard++ < 500) {
+            while ($cursor->lt($today) && $source->isRecurring() && $guard++ < 500) {
                 $cursor = $source->advancePayday($cursor);
             }
 
             for ($i = 0; $i < $limit; $i++) {
                 $dates->push($cursor->copy());
 
-                if ($source->pay_frequency === 'varies') {
+                if (! $source->isRecurring()) {
                     break;
                 }
 
@@ -67,14 +68,14 @@ class SetAsideCalculator
             $frequency = $user->pay_frequency ?? 'monthly';
 
             $guard = 0;
-            while ($cursor->lt($today) && $frequency !== 'varies' && $guard++ < 500) {
+            while ($cursor->lt($today) && IncomeSource::frequencyRepeats($frequency) && $guard++ < 500) {
                 $cursor = $this->advance($cursor, $frequency);
             }
 
             for ($i = 0; $i < $limit; $i++) {
                 $dates->push($cursor->copy());
 
-                if ($frequency === 'varies') {
+                if (! IncomeSource::frequencyRepeats($frequency)) {
                     break;
                 }
 
@@ -193,7 +194,10 @@ class SetAsideCalculator
             ? $user->incomeSources->where('is_active', true)
             : $user->incomeSources()->active()->get();
 
-        $income = $sources->sum(fn ($source) => $source->monthlyEquivalent());
+        // Recurring income per month, plus any one-time payment that lands in this month.
+        $income = $sources->sum(fn ($source) => $source->isRecurring()
+            ? $source->monthlyEquivalent()
+            : ($source->next_payday?->between($start, $end) ? (float) $source->amount : 0));
 
         if ($income <= 0) {
             $income = (float) ($user->estimated_paycheck_amount ?? 0) * $this->paydaysPerMonth($user->pay_frequency);
@@ -251,23 +255,11 @@ class SetAsideCalculator
 
     protected function advance(Carbon $from, string $frequency): Carbon
     {
-        return match ($frequency) {
-            'weekly' => $from->copy()->addWeek(),
-            'biweekly' => $from->copy()->addWeeks(2),
-            'semimonthly' => $from->day <= 15
-                ? $from->copy()->day(min(28, $from->daysInMonth))
-                : $from->copy()->addMonthNoOverflow()->day(15),
-            default => $from->copy()->addMonthNoOverflow(),
-        };
+        return IncomeSource::advanceFor($from, $frequency);
     }
 
     protected function paydaysPerMonth(?string $frequency): float
     {
-        return match ($frequency) {
-            'weekly' => 52 / 12,
-            'biweekly' => 26 / 12,
-            'semimonthly' => 2,
-            default => 1,
-        };
+        return IncomeSource::paydaysPerMonthFor($frequency);
     }
 }

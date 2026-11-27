@@ -16,7 +16,7 @@ class User extends Authenticatable
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable, HasApiTokens, SoftDeletes;
 
-    public const PAY_FREQUENCIES = ['weekly', 'biweekly', 'semimonthly', 'monthly', 'varies'];
+    public const PAY_FREQUENCIES = IncomeSource::FREQUENCIES;
 
     protected $fillable = [
         'name',
@@ -189,5 +189,45 @@ class User extends Authenticatable
             ->orderByDesc('is_primary')
             ->orderBy('id')
             ->first();
+    }
+
+    /**
+     * Keep exactly one active primary income source and mirror its schedule
+     * onto the user (payday maths reads it). When the primary was paused,
+     * deleted or un-set, the next active source (oldest first) takes over.
+     *
+     * $exceptId is a source that must not be picked while any other active
+     * source exists, e.g. the one whose `is_primary` was just turned off.
+     */
+    public function ensurePrimaryIncome(?int $exceptId = null): void
+    {
+        $active = $this->incomeSources()->active()->orderByDesc('is_primary')->orderBy('id')->get();
+        $candidates = $active->where('id', '!=', $exceptId);
+
+        if ($candidates->isEmpty()) {
+            $candidates = $active;
+        }
+
+        // Already ordered: current primary first, then oldest.
+        $primary = $candidates->first();
+
+        if (! $primary) {
+            return;
+        }
+
+        if (! $primary->is_primary) {
+            $primary->forceFill(['is_primary' => true])->save();
+        }
+
+        $this->incomeSources()
+            ->whereKeyNot($primary->id)
+            ->where('is_primary', true)
+            ->update(['is_primary' => false]);
+
+        $this->forceFill([
+            'pay_frequency' => $primary->pay_frequency,
+            'next_payday' => $primary->next_payday,
+            'estimated_paycheck_amount' => $primary->amount,
+        ])->save();
     }
 }
