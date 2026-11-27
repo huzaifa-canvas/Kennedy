@@ -78,7 +78,7 @@ support address shown under "Get In Touch" comes from `/app/config`
 
 | Method | Endpoint | Body |
 |---|---|---|
-| POST | `/auth/register` | `name`, `email`, `password`, `password_confirmation`, `phone?`, `timezone?`, `device_name?` |
+| POST | `/auth/register` | `name`, `email`, `password`, `password_confirmation`, `phone?`, `timezone?` ("America/New_York" or an offset like "UTC-5", saved as "-05:00"), `device_name?` |
 | POST | `/auth/login` | `email`, `password`, `device_name?` |
 | POST | `/auth/forgot-password` | `email` — sends a 6-digit code |
 | POST | `/auth/verify-otp` | `email`, `otp` — returns a `reset_token` |

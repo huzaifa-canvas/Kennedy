@@ -2,10 +2,14 @@
 
 namespace App\Http\Requests\Api;
 
+use App\Http\Requests\Api\Concerns\NormalizesTimezone;
+use App\Support\Timezone;
 use Illuminate\Validation\Rules\Password;
 
 class RegisterRequest extends ApiRequest
 {
+    use NormalizesTimezone;
+
     public function rules(): array
     {
         return [
@@ -13,7 +17,7 @@ class RegisterRequest extends ApiRequest
             'email' => ['required', 'string', 'email:rfc', 'max:255', 'unique:users,email'],
             'phone' => ['nullable', 'string', 'max:32', 'regex:/^[0-9\+\-\s\(\)]+$/'],
             'password' => ['required', 'string', 'confirmed', Password::min(8)->letters()->numbers()],
-            'timezone' => ['nullable', 'string', 'max:64', 'timezone'],
+            'timezone' => ['nullable', 'string', 'max:64', Timezone::rule()],
             'device_name' => ['nullable', 'string', 'max:100'],
         ];
     }
@@ -32,5 +36,7 @@ class RegisterRequest extends ApiRequest
             'email' => is_string($this->email) ? strtolower(trim($this->email)) : $this->email,
             'name' => is_string($this->name) ? trim($this->name) : $this->name,
         ]);
+
+        $this->normalizeTimezone();
     }
 }

@@ -2,11 +2,15 @@
 
 namespace App\Http\Requests\Api;
 
+use App\Http\Requests\Api\Concerns\NormalizesTimezone;
 use App\Models\User;
+use App\Support\Timezone;
 use Illuminate\Validation\Rule;
 
 class UpdateProfileRequest extends ApiRequest
 {
+    use NormalizesTimezone;
+
     public function rules(): array
     {
         return [
@@ -19,7 +23,7 @@ class UpdateProfileRequest extends ApiRequest
             'pay_frequency' => ['sometimes', 'required', Rule::in(User::PAY_FREQUENCIES)],
             'next_payday' => ['sometimes', 'nullable', 'date', 'after_or_equal:1970-01-01', 'before:+5 years'],
             'estimated_paycheck_amount' => ['sometimes', 'nullable', 'numeric', 'min:0', 'max:9999999.99'],
-            'timezone' => ['sometimes', 'nullable', 'string', 'max:64', 'timezone'],
+            'timezone' => ['sometimes', 'nullable', 'string', 'max:64', Timezone::rule()],
             'avatar' => ['sometimes', 'nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ];
     }
@@ -29,5 +33,7 @@ class UpdateProfileRequest extends ApiRequest
         if (is_string($this->email)) {
             $this->merge(['email' => strtolower(trim($this->email))]);
         }
+
+        $this->normalizeTimezone();
     }
 }
